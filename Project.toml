@@ -1,0 +1,13 @@
+name = "TetrisAI"
+uuid = "5135ef2d-63ae-4301-a332-27697f5442c2"
+authors = ["cleg1805 <cleg1805@usherbrooke.ca>", "chal2525 <chal2525@usherbrooke.ca>"]
+version = "0.1.0"
+
+[compat]
+julia = "1.7"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
