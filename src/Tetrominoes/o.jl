@@ -27,9 +27,10 @@ end
 
 function Base.show(io::IO, p::O_PIECE)
     println("Piece type: O_PIECE")
+    println("Position: ($(p.x), $(p.y))")
     println("Color: Yellow")
     println("Index: ", p.idx)
-    for i = 1:4
+    for i = 1:3
         println(p.shapes[p.idx][i, :])
     end
 end

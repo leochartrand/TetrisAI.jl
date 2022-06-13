@@ -26,9 +26,10 @@ end
 
 function Base.show(io::IO, p::T_PIECE)
     println("Piece type: T_PIECE")
+    println("Position: ($(p.x), $(p.y))")
     println("Color: Purple")
     println("Index: ", p.idx)
-    for i = 1:4
+    for i = 1:3
         println(p.shapes[p.idx][i, :])
     end
 end

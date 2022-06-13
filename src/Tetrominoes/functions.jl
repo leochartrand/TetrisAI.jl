@@ -10,3 +10,21 @@ function rotate_right!(t::AbstractTetromino)
     t.idx == 4 ? t.idx = 1 : t.idx += 1
     return
 end
+
+"""
+Get a piece randomly meta-programming style
+"""
+function get_random_piece()
+    PIECE_TYPES = [
+        :I_PIECE,
+        :J_PIECE,
+        :L_PIECE,
+        :O_PIECE,
+        :S_PIECE,
+        :T_PIECE,
+        :Z_PIECE
+    ]
+    piece = PIECE_TYPES[rand(1:length(PIECE_TYPES))]
+
+    return getfield(Main.TetrisAI.Tetrominoes, piece)()
+end
