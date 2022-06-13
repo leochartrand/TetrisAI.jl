@@ -1,3 +1,10 @@
+abstract type AbstractBlock end
+
+"""
+A block of that forces you to have coordinates matching a preset BLOCK_SIZE
+
+BLOCK_SIZE defaults to 20.
+"""
 mutable struct Block{T} <: AbstractBlock
     x::T
     y::T
