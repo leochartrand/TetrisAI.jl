@@ -1,5 +1,3 @@
-abstract type AbstractGrid end
-
 Base.@kwdef mutable struct Grid{T<:Integer} <: AbstractGrid
     rows::T = 40
     cols::T = 10
