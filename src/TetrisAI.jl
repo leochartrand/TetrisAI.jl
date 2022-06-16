@@ -1,5 +1,6 @@
 module TetrisAI
+    using GameZero
 
-# Write your package code here.
+    rungame("src/game.jl")
 
 end
