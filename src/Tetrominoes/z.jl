@@ -24,13 +24,3 @@ Base.@kwdef mutable struct Z_PIECE{T<:Integer} <: AbstractTetromino
          7 0 0]
     ]
 end
-
-function Base.show(io::IO, p::Z_PIECE)
-    println("Piece type: Z_PIECE")
-    println("Position: ($(p.x), $(p.y))")
-    println("Color: Cyan")
-    println("Index: ", p.idx)
-    for i = 1:3
-        println(p.shapes[p.idx][i, :])
-    end
-end

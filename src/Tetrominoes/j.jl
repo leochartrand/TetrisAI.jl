@@ -23,29 +23,3 @@ Base.@kwdef mutable struct J_PIECE{T<:Integer} <: AbstractTetromino
          2 2 0],
     ]
 end
-
-function Base.show(io::IO, p::J_PIECE)
-    println("Piece type: J_PIECE")
-    println("Position: ($(p.x), $(p.y))")
-    println("Color: Blue")
-    println("Index: ", p.idx)
-    for i = 1:3
-        println(p.shapes[p.idx][i, :])
-    end
-end
-
-"""
-Rotates the piece counter clockwise
-"""
-function rotate_left!(p::I_PIECE)
-    p.idx == 1 ? p.idx = 4 : p.idx -= 1
-    return
-end
-
-"""
-Rotates the piece clockwise
-"""
-function rotate_right!(p::I_PIECE) 
-    p.idx == 4 ? p.idx = 1 : p.idx += 1
-    return
-end

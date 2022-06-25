@@ -24,13 +24,3 @@ Base.@kwdef mutable struct S_PIECE{T<:Integer} <: AbstractTetromino
          0 5 0]
     ]
 end
-
-function Base.show(io::IO, p::S_PIECE)
-    println("Piece type: S_PIECE")
-    println("Position: ($(p.x), $(p.y))")
-    println("Color: Green")
-    println("Index: ", p.idx)
-    for i = 1:3
-        println(p.shapes[p.idx][i, :])
-    end
-end
