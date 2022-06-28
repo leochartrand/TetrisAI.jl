@@ -31,7 +31,7 @@ end
 Get a piece randomly meta-programming style
 """
 function get_random_piece()
-    PIECE_TYPES = [
+    local PIECE_TYPES = [
         :I_PIECE,
         :J_PIECE,
         :L_PIECE,

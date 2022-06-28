@@ -1,7 +1,7 @@
 module Tetrominoes
 
 export AbstractTetromino, I_PIECE, J_PIECE, L_PIECE, O_PIECE, S_PIECE, T_PIECE, 
-    Z_PIECE, rotate_left!, rotate_right!
+    Z_PIECE, rotate_left!, rotate_right!, get_random_piece
 
 include("types.jl")
 include("i.jl")
