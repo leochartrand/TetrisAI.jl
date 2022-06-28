@@ -1,6 +1,8 @@
 module TetrisAI
     using GameZero
 
-    rungame("src/game.jl")
 
+    function run_tetris()
+        rungame("src/game.jl")
+    end
 end
