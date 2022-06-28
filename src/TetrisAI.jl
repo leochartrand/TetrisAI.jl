@@ -1,4 +1,5 @@
 module TetrisAI
+    using GameZero
 
 include("Utils/Utils.jl")
 using .Utils
@@ -11,5 +12,10 @@ export rotate_left!, rotate_right!
 include("Game/Game.jl")
 using .Game
 export TetrisGame
+
+
+function run_tetris()
+    rungame("src/game.jl")
+end
 
 end
