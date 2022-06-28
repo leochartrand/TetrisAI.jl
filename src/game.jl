@@ -24,6 +24,7 @@ T = Actor("t.png")
 Z = Actor("z.png")
 pause = Actor("pause.png")
 
+#scenrio for testing
 board = fill(0,10,20)
 board[1,20] = 1
 board[1,19] = 1
@@ -33,6 +34,10 @@ board[2,20] = 6
 board[3,20] = 6
 board[4,20] = 6
 board[3,19] = 6
+
+gravityDict = Dict([(1,43), (2,38), (3,33), (4,28), (5,23), (6,18), (7,13), (8,8), (9,6), (10,5), (13,4), (16,3), (19,2), (29,1)])
+
+tetrominoesDict = Dict([(0, 0), (1, I), (2, J), (3, L), (4, O), (5, S), (6, T), (7, Z)])
 
 # Commands
 function moveLeft()
@@ -68,34 +73,16 @@ function pauseGame()
 end
 
 function quitGame()
-
+    exit()
 end
-
 
 # Functions
-function getSquare(n)
-    if n == 1
-        return I
-    elseif n == 2
-        return J
-    elseif n == 3
-        return L
-    elseif n == 4
-        return O
-    elseif n == 5
-        return S
-    elseif n == 6
-        return T
-    elseif n == 7
-        return Z
-    end    
-end
 
 function drawBoard()
     for i in 1:10, j in 1:20
         value = board[i,j]
         if value > 0
-            square = getSquare(value)
+            square = tetrominoesDict[value]
             square.center = (40i + 30, 40j + 80)
             draw(square)
         end
@@ -141,37 +128,9 @@ end
 
 function levelUp()
     global Level += 1
-    grvt = Gravity
-    if Level == 1
-        grvt = 43
-    elseif Level == 2
-        grvt = 38
-    elseif Level == 3
-        grvt = 33
-    elseif Level == 4
-        grvt = 28
-    elseif Level == 5
-        grvt = 23
-    elseif Level == 6
-        grvt = 18
-    elseif Level == 7
-        grvt = 13
-    elseif Level == 8
-        grvt = 8
-    elseif Level == 9
-        grvt = 6
-    elseif Level == 10
-        grvt = 5
-    elseif Level == 13
-        grvt = 4
-    elseif Level == 16
-        grvt = 3
-    elseif Level == 19
-        grvt = 2
-    elseif Level == 29
-        grvt = 1
+    if Level in keys(gravityDict)
+        global Gravity = gravityDict[Level]
     end
-    global Gravity = grvt
 end
 
 function draw(g::Game)
