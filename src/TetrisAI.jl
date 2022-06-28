@@ -1,8 +1,21 @@
 module TetrisAI
     using GameZero
 
+include("Utils/Utils.jl")
+using .Utils
+export Block, BLOCK_SIZE, STARTING_X_POS, STARTING_Y_POS, COLORS_DICT
 
-    function run_tetris()
-        rungame("src/game.jl")
-    end
+include("Tetrominoes/Tetrominoes.jl")
+using .Tetrominoes
+export rotate_left!, rotate_right!
+
+include("Game/Game.jl")
+using .Game
+export TetrisGame
+
+
+function run_tetris()
+    rungame("src/game.jl")
+end
+
 end
