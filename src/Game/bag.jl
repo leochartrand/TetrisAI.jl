@@ -5,12 +5,14 @@ Base.@kwdef mutable struct Bag <: AbstractBag
 end
 
 function Base.show(io::IO, b::AbstractBag)
+    println("Bag\n---")
     println("Bag size: $(b.bag_size)")
     println("Previews: $(b.previews)")
-    println("Pieces\n------")
+    print("Pieces: [ ")
     for i in 1:b.bag_size
-        println(b.pieces[i])
+        print(split(string(typeof(b.pieces[i])), ".")[end], ", ")
     end
+    println("]")
 end
 
 function get_preview_pieces(b::AbstractBag)
