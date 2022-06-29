@@ -3,6 +3,7 @@ The Z_PIECE is an offset stack of horizontal 2-blocks lines with it's top line
 protruding to the left.
 """
 Base.@kwdef mutable struct Z_PIECE{T<:Integer} <: AbstractTetromino
+    id::T = 7
     x::T = 2
     y::T = 4
     idx::T = 1

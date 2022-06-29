@@ -3,6 +3,7 @@ The S_PIECE is an offset stack of horizontal 2-blocks lines with it's top line
 protruding to the right.
 """
 Base.@kwdef mutable struct S_PIECE{T<:Integer} <: AbstractTetromino
+    id::T = 5
     x::T = 2
     y::T = 4
     idx::T = 1

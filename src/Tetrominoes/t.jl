@@ -2,6 +2,7 @@
 The T_PIECE is an inverted T.
 """
 Base.@kwdef mutable struct T_PIECE{T<:Integer} <: AbstractTetromino
+    id::T = 6
     x::T = 2
     y::T = 4
     idx::T = 1
