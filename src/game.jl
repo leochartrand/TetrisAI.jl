@@ -7,12 +7,8 @@ WIDTH = 1000
 HEIGHT = 1000
 
 Paused = false
-
-Lines = 0
 Timer = 0
-Level = 0
 Gravity = 48
-
 
 # Sprites
 bg = Actor("bg.png")
@@ -24,7 +20,6 @@ O = Actor("o.png")
 S = Actor("s.png")
 T = Actor("t.png")
 Z = Actor("z.png")
-pause = Actor("pause.png")
 
 gravityDict = Dict([(1,43), (2,38), (3,33), (4,28), (5,23), (6,18), (7,13), (8,8), (9,6), (10,5), (13,4), (16,3), (19,2), (29,1)])
 
@@ -54,11 +49,12 @@ end
 
 function drawBoard(grid::TetrisAI.Game.AbstractGrid)
 
-    let NB_ROWS = game.grid.rows,
+    let NB_ROWS = grid.rows,
+        NB_COLS = grid.cols,
         NB_VISIBLE_ROWS = 20,
         NB_HIDDEN_ROWS = NB_ROWS - NB_VISIBLE_ROWS
 
-        for i in NB_HIDDEN_ROWS+1:NB_ROWS, j in 1:grid.cols
+        for i in NB_HIDDEN_ROWS+1:NB_ROWS, j in 1:NB_COLS
             value = grid.cells[i,j]
             if value > 0
                 square = tetrominoesDict[value]
@@ -67,9 +63,11 @@ function drawBoard(grid::TetrisAI.Game.AbstractGrid)
             end
         end
     end
+    return
 end
 
 function on_key_down(g::Game, k)
+    global game
     if !Paused
         if (k == Keys.LEFT)
             TetrisAI.Game.move_left!(game)
@@ -100,12 +98,13 @@ function on_key_down(g::Game, k)
 end
 
 function timeStep()
-    global Timer += 1
+    global Timer, game
+    Timer += 1
     if Timer >= Gravity
-        print(game)
         TetrisAI.Game.play_step!(game)
         resetTimer()
     end
+    return
 end
 
 function resetTimer()
@@ -120,18 +119,19 @@ function levelUp()
 end
 
 function draw(g::Game)
+    global game
     draw(bg)
     drawBoard(game.grid)
     txt = TextActor(string(Timer), "bold"; font_size = 50, color = Int[255, 255, 255, 255])
     txt.pos = (0,0)
     draw(txt)
-    lvl = TextActor(string(Level), "bold"; font_size = 50, color = Int[255, 255, 255, 255])
+    lvl = TextActor(string(game.level), "bold"; font_size = 50, color = Int[255, 255, 255, 255])
     lvl.center = (875,425)
     draw(lvl)
     scr = TextActor(string(game.score), "bold"; font_size = 50, color = Int[255, 255, 255, 255])
     scr.center = (750,625)
     draw(scr)
-    lnz = TextActor(string(Lines), "bold"; font_size = 50, color = Int[255, 255, 255, 255])
+    lnz = TextActor(string(game.line_count), "bold"; font_size = 50, color = Int[255, 255, 255, 255])
     lnz.center = (750,825)
     draw(lnz)
     if Paused

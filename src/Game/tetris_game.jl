@@ -7,7 +7,7 @@ Representation of a tetris game
 Base.@kwdef mutable struct TetrisGame{T<:Integer} <: AbstractGame
     seed::T = 0
     is_over::Bool = false
-    level::T = 1
+    level::T = 0
     line_count::T = 0
     score::T = 0
     bag::Bag = Bag()
@@ -48,7 +48,7 @@ function check_for_lines!(game::AbstractGame)
         end
 
         if cleared_lines != 0
-            game.score += SCORE_LIST[cleared_lines] * game.level
+            game.score += SCORE_LIST[cleared_lines] * (game.level + 1)
         end
     end
     return
