@@ -22,9 +22,30 @@ end
 """
 Rotates the piece clockwise
 """
-function rotate_right!(t::AbstractTetromino) 
+function rotate_right!(t::AbstractTetromino)
     t.idx == 4 ? t.idx = 1 : t.idx += 1
     return
+end
+
+"""
+Moves the tetromino one block to the left
+"""
+function move_left!(t::AbstractTetromino) 
+    t.y -= 1
+end
+
+"""
+Moves the tetromino one block to the right
+"""
+function move_right!(t::AbstractTetromino) 
+    t.y += 1
+end
+
+"""
+Drops the tetromino down once.
+"""
+function drop!(t::AbstractTetromino) 
+    t.x += 1
 end
 
 """
