@@ -55,13 +55,8 @@ function play_step!(game::AbstractGame)
         # Check if we have cleared lines only when piece is dropped
         check_for_lines!(game)
     else
-        println("No colision")
-        println(game.active_piece)
         clear_piece_cells!(game.grid, game.active_piece)
-        println(game.grid)
         drop!(game.active_piece)
-        println(game.active_piece)
-
         # Draws the new piece on the grid
         put_piece!(game.grid, game.active_piece)
     end
