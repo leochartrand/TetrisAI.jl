@@ -115,7 +115,9 @@ function check_for_lines!(game::AbstractGame)
         if cleared_lines != 0
             game.line_count += cleared_lines
             # Increase level every 10 lines
-            game.level = game.line_count ÷ 10
+            if game.line_count >= game.level*10 + 10
+                game.level += 1
+            end
             game.score += SCORE_LIST[cleared_lines] * (game.level + 1)
         end
     end

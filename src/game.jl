@@ -18,12 +18,23 @@ WIDTH = 1000
 HEIGHT = 1000
 
 # Dict should be changed to map all levels or change the Gravity adjustments in timestep
-gravityDict = Dict([ (0, 48), (1,43), (2,38), (3,33), (4,28), (5,23), (6,18), (7,13), (8,8), (9,6), (10,5), (13,4), (16,3), (19,2), (29,1)])
+gravityDict = Dict([(0, 48), (1,43), (2,38), (3,33), (4,28), (5,23), (6,18), (7,13), (8,8), (9,6), (10,5), (13,4), (16,3), (19,2), (29,1)])
 tetrominoesDict = Dict([(0, 0), (1, I), (2, J), (3, L), (4, O), (5, S), (6, T), (7, Z)])
+
+function levelUp()
+    global Gravity
+
+    let level = game.level
+        while !(level in keys(gravityDict))
+            level -= 1
+        end
+        Gravity = gravityDict[level]
+    end
+end
 
 Paused = false
 Timer = 0
-Gravity = gravityDict[game.level]
+Gravity = levelUp()
 
 function pauseGame()
     global Paused = !Paused
@@ -91,7 +102,7 @@ function timeStep()
         if play_step!(game)
             reset!(game)
         end
-        Gravity = gravityDict[game.level]
+        levelUp()
         resetTimer()
     end
     return
@@ -101,12 +112,7 @@ function resetTimer()
     global Timer = 0
 end
 
-function levelUp()
-    global Level += 1
-    if Level in keys(gravityDict)
-        global Gravity = gravityDict[Level]
-    end
-end
+
 
 function draw(g::Game)
     global game
