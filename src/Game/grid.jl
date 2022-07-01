@@ -98,70 +98,69 @@ end
 """
 Check if a tetromino will collide with another tetromino on the grid
 """
-function is_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
-    # Iterate over every block of the tetromino matrix
-    for i in 1:size(t, 1), j in 1:size(t, 2)
-        # Calculate if a block will be on top of another tetromino
-        if t[i, j] == t.color
-            # Check if we are at the final row
-            if t.row + i - 1 == g.rows
-                return true
-            end
-        
-            # There's a block below, we check if it's part of the same tetromino
-            if g.cells[t.row+i, t.col+j-1] != 0                 
-                # Collision because it's part of another tetromino
-                if i == size(t, 1) || t[i+1, j] == 0
+function is_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino; direction::Symbol=:Bottom)
+    function bottom_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+        # Iterate over every block of the tetromino matrix
+        for i in 1:size(t, 1), j in 1:size(t, 2)
+            # Calculate if a block will be on top of another tetromino
+            if t[i, j] == t.color
+                # Check if we are at the final row
+                if t.row + i - 1 == g.rows
                     return true
+                end
+            
+                # There's a block below, we check if it's part of the same tetromino
+                if g.cells[t.row+i, t.col+j-1] != 0                 
+                    # Collision because it's part of another tetromino
+                    if i == size(t, 1) || t[i+1, j] == 0
+                        return true
+                    end
                 end
             end
         end
+        return false
     end
-    # Every block is in bounds
-    return false
+    function left_side_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+        # Iterate over every block of the tetromino matrix
+        for i in 1:size(t, 1), j in 1:size(t, 2)
+            # Calculate if a block will be on top of another tetromino
+            if t[i, j] == t.color         
+                # There's a block below, we check if it's part of the same tetromino
+                if g.cells[t.row+i-1, t.col+j-2] != 0                 
+                    # Collision because it's part of another tetromino
+                    if j == 1 || t[i, j-1] == 0
+                        return true
+                    end
+                end
+            end
+        end
+        return false
+    end
+    function right_side_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+        # Iterate over every block of the tetromino matrix
+        for i in 1:size(t, 1), j in 1:size(t, 2)
+            # Calculate if a block will be on top of another tetromino
+            if t[i, j] == t.color         
+                # There's a block below, we check if it's part of the same tetromino
+                if g.cells[t.row+i-1, t.col+j] != 0                 
+                    # Collision because it's part of another tetromino
+                    if j == size(t, 2) || t[i, j+1] == 0
+                        return true
+                    end
+                end
+            end
+        end
+        return false
+    end
+    
+    # Check for collisions
+    if direction == :Bottom
+        return bottom_collision(g, t)
+    elseif direction == :Left
+        return left_side_collision(g, t)
+    elseif direction == :Right
+        return right_side_collision(g, t)
+    else
+        error("Invalid direction $direction for collision.")
+    end
 end
-
-# function is_at_bottom(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
-#     let nb_rows = size(t.shapes[t.idx], 1),
-#         nb_cols = size(t.shapes[t.idx], 2)
-
-#         # Iterate over every block of the tetromino matrix
-#         for i in 1:nb_rows, j in 1:nb_cols
-#             # Calculate if a block will be on top of another tetromino
-#             if t.shapes[t.idx][i, j] == t.id
-#                 # Check for other tetromino
-#                 if t.x + i - 1 == g.rows
-#                     return true
-#                 end
-#             end
-#         end
-#     end
-#     # Every block is not at the bottom of the grid
-#     return false
-# end
-
-# function check_condition(cond::Symbol, g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
-
-#     local CONDITIONS = Dict{Symbol, Expr}(
-#         :OTB => :((!(1 <= t.x + i <= g.rows) || !(1 <= t.y + j <= g.cols)) && return true),
-#         :COLLISION => :(grid.cells[t.x, t.y] != 0 && return true),
-#         :BOTTOM => :((t.x + i) - 1 == g.rows && return true)
-#     )
-
-#     let nb_rows = size(t.shapes[t.idx], 1),
-#         nb_cols = size(t.shapes[t.idx], 2)
-
-#         # Iterate over every block of the tetromino matrix
-#         for i in 1:nb_rows, j in 1:nb_cols
-#             # Calculate if a block will be on top of another tetromino
-#             if t.shapes[t.idx][i, j] == t.id
-#                 # Check for other tetromino
-#                 if t.x + i - 1 == g.rows
-#                     return true
-#                 end
-#             end
-#         end
-#     end
-#     # Every block is not at the bottom of the grid
-#     return false
-# end

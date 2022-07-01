@@ -164,9 +164,14 @@ function input_move_left!(game::AbstractGame)
     # Rotates the temp piece to validate it's in bounds
     move_left!(tmp)
 
+    # Check wheter the piece will be out of bound
     if !is_out_of_bounds(game.grid, tmp)
-        # Update the active piece
-        game.active_piece = tmp
+        
+        # Piece is in bounds, check for collision
+        if !is_collision(game.grid, game.active_piece, direction=:Left)
+            # Update the active piece
+            game.active_piece = tmp
+        end
     end
 
     # Place the piece on the grid
@@ -182,8 +187,11 @@ function input_move_right!(game::AbstractGame)
     move_right!(tmp)
 
     if !is_out_of_bounds(game.grid, tmp)
-        # Update the active piece
-        game.active_piece = tmp
+        # Piece is in bounds, check for collision
+        if !is_collision(game.grid, game.active_piece, direction=:Right)
+            # Update the active piece
+            game.active_piece = tmp
+        end
     end
 
     # Place the piece on the grid
