@@ -49,8 +49,15 @@ Advance the game state by one state.
 function play_step!(game::AbstractGame)
 
     if is_collision(game.grid, game.active_piece)
+        
+        # Check for game over collision at starting row
+        if game.active_piece.row == 2
+            game.is_over = true
+            return game.is_over
+        end
+
         # Freeze the piece in place and get a new piece
-        game.active_piece = pop_piece!(game.bag)
+        game.active_piece = pop_piece!(game.bag)      
 
         # Check if we have cleared lines only when piece is dropped
         check_for_lines!(game)
@@ -60,7 +67,19 @@ function play_step!(game::AbstractGame)
         # Draws the new piece on the grid
         put_piece!(game.grid, game.active_piece)
     end
-    return
+    return game.is_over
+end
+
+function reset!(game::AbstractGame)
+    game.is_over = false
+    game.level = 0
+    game.line_count = 0
+    game.score = 0
+    game.bag = Bag()
+    game.active_piece = pop_piece!(game.bag)
+    game.hold_piece = nothing
+    game.grid = put_piece!(Grid(), game.active_piece)
+    return game
 end
 
 """
@@ -94,6 +113,9 @@ function check_for_lines!(game::AbstractGame)
         end
 
         if cleared_lines != 0
+            game.line_count += cleared_lines
+            # Increase level every 10 lines
+            game.level = game.line_count ÷ 10
             game.score += SCORE_LIST[cleared_lines] * (game.level + 1)
         end
     end
@@ -115,8 +137,10 @@ function input_rotate_counter_clockwise!(game::AbstractGame)
     rotate_counter_clockwise!(tmp)
 
     if !is_out_of_bounds(game.grid, tmp)
-        # Update the active piece
-        game.active_piece = tmp
+        if !is_collision(game.grid, tmp, direction=:In_place)
+            # Update the active piece
+            game.active_piece = tmp
+        end
     end
 
     # Place the piece on the grid
@@ -141,8 +165,11 @@ function input_rotate_clockwise!(game::AbstractGame)
     rotate_clockwise!(tmp)
 
     if !is_out_of_bounds(game.grid, tmp)
-        # Update the active piece
-        game.active_piece = tmp
+
+        if !is_collision(game.grid, tmp, direction=:In_place)
+            # Update the active piece
+            game.active_piece = tmp
+        end
     end
 
     # Place the piece on the grid

@@ -3,13 +3,6 @@ using TetrisAI
 
 global game = TetrisGame()
 
-WIDTH = 1000
-HEIGHT = 1000
-
-Paused = false
-Timer = 0
-Gravity = 48
-
 # Sprites
 bg = Actor("bg.png")
 pause = Actor("pause.png")
@@ -21,21 +14,16 @@ S = Actor("s.png")
 T = Actor("t.png")
 Z = Actor("z.png")
 
-gravityDict = Dict([(1,43), (2,38), (3,33), (4,28), (5,23), (6,18), (7,13), (8,8), (9,6), (10,5), (13,4), (16,3), (19,2), (29,1)])
+WIDTH = 1000
+HEIGHT = 1000
 
+# Dict should be changed to map all levels or change the Gravity adjustments in timestep
+gravityDict = Dict([ (0, 48), (1,43), (2,38), (3,33), (4,28), (5,23), (6,18), (7,13), (8,8), (9,6), (10,5), (13,4), (16,3), (19,2), (29,1)])
 tetrominoesDict = Dict([(0, 0), (1, I), (2, J), (3, L), (4, O), (5, S), (6, T), (7, Z)])
 
-function softDrop()
-    resetTimer()
-end
-
-function hardDrop()
-    resetTimer()
-end
-
-function holdPiece()
-
-end
+Paused = false
+Timer = 0
+Gravity = gravityDict[game.level]
 
 function pauseGame()
     global Paused = !Paused
@@ -97,10 +85,13 @@ function on_key_down(g::Game, k)
 end
 
 function timeStep()
-    global Timer, game
+    global Timer, game, Gravity
     Timer += 1
     if Timer >= Gravity
-        TetrisAI.Game.play_step!(game)
+        if play_step!(game)
+            reset!(game)
+        end
+        Gravity = gravityDict[game.level]
         resetTimer()
     end
     return

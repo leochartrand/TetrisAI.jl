@@ -152,6 +152,19 @@ function is_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino; directi
         end
         return false
     end
+    function in_place_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+        # Iterate over every block of the tetromino matrix
+        for i in 1:size(t, 1), j in 1:size(t, 2)
+            # Calculate if a block will be on top of another tetromino
+            if t[i, j] == t.color         
+                # There's a block below, we check if it's part of the same tetromino
+                if g.cells[t.row+i-1, t.col+j-1] != 0                 
+                    return true
+                end
+            end
+        end
+        return false
+    end
     
     # Check for collisions
     if direction == :Bottom
@@ -160,6 +173,8 @@ function is_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino; directi
         return left_side_collision(g, t)
     elseif direction == :Right
         return right_side_collision(g, t)
+    elseif direction == :In_place
+        return in_place_collision(g, t)
     else
         error("Invalid direction $direction for collision.")
     end
