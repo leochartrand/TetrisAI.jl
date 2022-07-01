@@ -87,6 +87,14 @@ function rotate_counter_clockwise!(t::AbstractTetromino)
 end
 
 """
+Resets a tetromino to it's starting position
+"""
+function reset!(t::AbstractTetromino)
+    t.row, t.col, t.state = 2, 4, 1
+    return
+end
+
+"""
 The I_PIECE is a long straight bar.
 This piece is the only piece capable of producing a tetris when dropped.
 """

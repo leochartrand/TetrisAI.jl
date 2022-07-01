@@ -1,6 +1,6 @@
 
-import ..Tetrominoes: rotate_left!, rotate_right!, drop!, move_left!, move_right!
-
+# import ..Tetrominoes: rotate_left!, rotate_right!, drop!, move_left!, move_right!
+abstract type AbstractGame end
 """
 Representation of a tetris game
 """
@@ -11,11 +11,62 @@ Base.@kwdef mutable struct TetrisGame{T<:Integer} <: AbstractGame
     line_count::T = 0
     score::T = 0
     bag::Bag = Bag()
-    active_piece::AbstractTetromino = pop_piece!(bag)
-    hold_piece::Union{AbstractTetromino,Nothing} = nothing
+    active_piece::Tetrominoes.AbstractTetromino = pop_piece!(bag)
+    hold_piece::Union{Tetrominoes.AbstractTetromino,Nothing} = nothing
     grid::Grid = put_piece!(Grid(), active_piece)
 end
 
+"""
+Function used to send inputs to the game. 
+
+This is the only function of the tetris API that is available to the user. 
+Every attempt to change the game's state should be sent through this function.
+"""
+function send_input!(game::AbstractGame, input::Symbol)
+    
+    let VALID_INPUTS = [      
+        :move_left,
+        :move_right,
+        :soft_drop,
+        :hard_drop,
+        :rotate_clockwise,
+        :rotate_counter_clockwise,
+        :hold_piece
+        ]
+        if input in VALID_INPUTS
+            f = Symbol(:input_, input, :!)
+            getfield(@__MODULE__, f)(game)
+        else
+            error("Invalid input: $input\n\nInput must be in:\n$VALID_INPUTS")
+        end
+    end
+    return
+end
+
+"""
+Advance the game state by one state.
+"""
+function play_step!(game::AbstractGame)
+
+    if is_collision(game.grid, game.active_piece)
+        # Freeze the piece in place and get a new piece
+        game.active_piece = pop_piece!(game.bag)
+
+        # Check if we have cleared lines only when piece is dropped
+        check_for_lines!(game)
+    else
+        println("No colision")
+        println(game.active_piece)
+        clear_piece_cells!(game.grid, game.active_piece)
+        println(game.grid)
+        drop!(game.active_piece)
+        println(game.active_piece)
+
+        # Draws the new piece on the grid
+        put_piece!(game.grid, game.active_piece)
+    end
+    return
+end
 
 """
 Clear full lines on the grid and adjust the score accordingly.
@@ -54,47 +105,19 @@ function check_for_lines!(game::AbstractGame)
     return
 end
 
-
-"""
-Advance the game state by one state.
-"""
-function play_step!(game::AbstractGame)
-
-    if is_collision(game.grid, game.active_piece)
-        # Freeze the piece in place and get a new piece
-        game.active_piece = pop_piece!(game.bag)
-
-        # Check if we have cleared lines only when piece is dropped
-        check_for_lines!(game)
-    else
-        println("No colision")
-        println(game.active_piece)
-        clear_piece_cells!(game.grid, game.active_piece)
-        println(game.grid)
-        drop!(game.active_piece)
-        println(game.active_piece)
-
-        # Draws the new piece on the grid
-        put_piece!(game.grid, game.active_piece)
-    end
-    return
-end
-
-
-
 """
 Rotates a piece counter-clockwise on the grid.
 
 This function should be the one called from player interaction.
 """
-function rotate_left!(game::AbstractGame)
+function input_rotate_counter_clockwise!(game::AbstractGame)
     # Clear the space occupied by the active piece
     clear_piece_cells!(game.grid, game.active_piece)
 
     local tmp = deepcopy(game.active_piece)
 
     # Rotates the temp piece to validate it's in bounds
-    rotate_left!(tmp)
+    rotate_counter_clockwise!(tmp)
 
     if !is_out_of_bounds(game.grid, tmp)
         # Update the active piece
@@ -112,7 +135,7 @@ Rotates a piece clockwise on the grid.
 
 This function should be the one called from player interaction.
 """
-function rotate_right!(game::AbstractGame)
+function input_rotate_clockwise!(game::AbstractGame)
 
     # Clear the space occupied by the active piece
     clear_piece_cells!(game.grid, game.active_piece)
@@ -120,7 +143,7 @@ function rotate_right!(game::AbstractGame)
     local tmp = deepcopy(game.active_piece)
 
     # Rotates the temp piece to validate it's in bounds
-    rotate_right!(tmp)
+    rotate_clockwise!(tmp)
 
     if !is_out_of_bounds(game.grid, tmp)
         # Update the active piece
@@ -133,7 +156,7 @@ function rotate_right!(game::AbstractGame)
     return
 end
 
-function move_left!(game::AbstractGame)
+function input_move_left!(game::AbstractGame)
     clear_piece_cells!(game.grid, game.active_piece)
 
     local tmp = deepcopy(game.active_piece)
@@ -150,7 +173,7 @@ function move_left!(game::AbstractGame)
     put_piece!(game.grid, game.active_piece)
 end
 
-function move_right!(game::AbstractGame)
+function input_move_right!(game::AbstractGame)
     clear_piece_cells!(game.grid, game.active_piece)
 
     local tmp = deepcopy(game.active_piece)
@@ -167,7 +190,7 @@ function move_right!(game::AbstractGame)
     put_piece!(game.grid, game.active_piece)
 end
 
-function hard_drop_piece!(game::AbstractGame)
+function input_hard_drop!(game::AbstractGame)
 
     # Clear the space occupied by the active piece
     clear_piece_cells!(game.grid, game.active_piece)
@@ -175,6 +198,28 @@ function hard_drop_piece!(game::AbstractGame)
     # Drop the piece until we reach a collision state
     while (!is_collision(game.grid, game.active_piece))
         drop!(game.active_piece)
+    end
+
+    # Place the piece on the grid
+    put_piece!(game.grid, game.active_piece)
+    play_step!(game)
+    return
+end
+
+function input_hold_piece!(game::AbstractGame)
+
+    # Clear the space occupied by the active piece
+    clear_piece_cells!(game.grid, game.active_piece)
+
+    if game.hold_piece === nothing
+        # Place the active piece in the hold
+        game.hold_piece = game.active_piece
+        # Get a new piece
+        game.active_piece = pop_piece!(game.bag)
+    else
+        # Swaps the pieces
+        game.active_piece, game.hold_piece = game.hold_piece, game.active_piece
+        reset!(game.active_piece)
     end
 
     # Place the piece on the grid
