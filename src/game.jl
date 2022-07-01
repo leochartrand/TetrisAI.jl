@@ -1,16 +1,7 @@
 #init 
+using TetrisAI
 
-WIDTH = 1000
-HEIGHT = 1000
-
-Paused = false
-
-Score = 0
-Lines = 0
-Timer = 0
-Level = 0
-Gravity = 48
-
+global game = TetrisGame()
 
 # Sprites
 bg = Actor("bg.png")
@@ -22,51 +13,28 @@ O = Actor("o.png")
 S = Actor("s.png")
 T = Actor("t.png")
 Z = Actor("z.png")
-pause = Actor("pause.png")
 
-#scenrio for testing
-board = fill(0,10,20)
-board[1,20] = 1
-board[1,19] = 1
-board[1,18] = 1
-board[1,17] = 1
-board[2,20] = 6
-board[3,20] = 6
-board[4,20] = 6
-board[3,19] = 6
+WIDTH = 1000
+HEIGHT = 1000
 
-gravityDict = Dict([(1,43), (2,38), (3,33), (4,28), (5,23), (6,18), (7,13), (8,8), (9,6), (10,5), (13,4), (16,3), (19,2), (29,1)])
-
+# Dict should be changed to map all levels or change the Gravity adjustments in timestep
+gravityDict = Dict([(0, 48), (1,43), (2,38), (3,33), (4,28), (5,23), (6,18), (7,13), (8,8), (9,6), (10,5), (13,4), (16,3), (19,2), (29,1)])
 tetrominoesDict = Dict([(0, 0), (1, I), (2, J), (3, L), (4, O), (5, S), (6, T), (7, Z)])
 
-# Commands
-function moveLeft()
+function levelUp()
+    global Gravity
 
+    let level = game.level
+        while !(level in keys(gravityDict))
+            level -= 1
+        end
+        Gravity = gravityDict[level]
+    end
 end
 
-function moveRight()
-
-end
-
-function rotateClockwise()
-
-end
-
-function rotateCounterclockwise()
-
-end
-
-function softDrop()
-    resetTimer()
-end
-
-function hardDrop()
-    resetTimer()
-end
-
-function holdPiece()
-
-end
+Paused = false
+Timer = 0
+Gravity = levelUp()
 
 function pauseGame()
     global Paused = !Paused
@@ -78,34 +46,46 @@ end
 
 # Functions
 
-function drawBoard()
-    for i in 1:10, j in 1:20
-        value = board[i,j]
-        if value > 0
-            square = tetrominoesDict[value]
-            square.center = (40i + 30, 40j + 80)
-            draw(square)
+function drawBoard(grid::TetrisAI.Game.AbstractGrid)
+
+    let NB_ROWS = grid.rows,
+        NB_COLS = grid.cols,
+        NB_VISIBLE_ROWS = 20,
+        NB_HIDDEN_ROWS = NB_ROWS - NB_VISIBLE_ROWS
+
+        for i in NB_HIDDEN_ROWS+1:NB_ROWS, j in 1:NB_COLS
+            value = grid.cells[i,j]
+            if value > 0
+                square = tetrominoesDict[value]
+                square.center = (40j + 30, 40i - 40)
+                draw(square)
+            end
         end
     end
+    return
 end
 
 function on_key_down(g::Game, k)
+    global game
     if !Paused
         if (k == Keys.LEFT)
-            moveLeft()
-            levelUp()
+            send_input!(game, :move_left)
         elseif (k == Keys.RIGHT)
-            moveRight()
+            send_input!(game, :move_right)
         elseif (k == Keys.UP || k == Keys.X)
-            rotateClockwise()
+            send_input!(game, :rotate_clockwise)
         elseif (k == Keys.LCTRL || k == Keys.Z)
-            rotateCounterclockwise()
+            # send_input!(game, :soft_drop)
         elseif (k == Keys.DOWN)
-            softDrop()
+            send_input!(game, :rotate_counter_clockwise)
         elseif (k == Keys.SPACE)
-            hardDrop()
+            send_input!(game, :hard_drop)
+            resetTimer()
         elseif (k == Keys.LSHIFT || k == Keys.C)
-            holdPiece()
+            send_input!(game, :hold_piece)
+        elseif (k == Keys.D)
+            # Debug print
+            println(game)
         end
     end
     if k == Keys.P
@@ -116,36 +96,38 @@ function on_key_down(g::Game, k)
 end
 
 function timeStep()
-    global Timer += 1
+    global Timer, game, Gravity
+    Timer += 1
     if Timer >= Gravity
+        if play_step!(game)
+            reset!(game)
+        end
+        levelUp()
         resetTimer()
     end
+    return
 end
 
 function resetTimer()
     global Timer = 0
 end
 
-function levelUp()
-    global Level += 1
-    if Level in keys(gravityDict)
-        global Gravity = gravityDict[Level]
-    end
-end
+
 
 function draw(g::Game)
+    global game
     draw(bg)
-    drawBoard()
+    drawBoard(game.grid)
     txt = TextActor(string(Timer), "bold"; font_size = 50, color = Int[255, 255, 255, 255])
     txt.pos = (0,0)
     draw(txt)
-    lvl = TextActor(string(Level), "bold"; font_size = 50, color = Int[255, 255, 255, 255])
+    lvl = TextActor(string(game.level), "bold"; font_size = 50, color = Int[255, 255, 255, 255])
     lvl.center = (875,425)
     draw(lvl)
-    scr = TextActor(string(Score), "bold"; font_size = 50, color = Int[255, 255, 255, 255])
+    scr = TextActor(string(game.score), "bold"; font_size = 50, color = Int[255, 255, 255, 255])
     scr.center = (750,625)
     draw(scr)
-    lnz = TextActor(string(Lines), "bold"; font_size = 50, color = Int[255, 255, 255, 255])
+    lnz = TextActor(string(game.line_count), "bold"; font_size = 50, color = Int[255, 255, 255, 255])
     lnz.center = (750,825)
     draw(lnz)
     if Paused
