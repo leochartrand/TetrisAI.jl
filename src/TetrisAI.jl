@@ -14,7 +14,7 @@ export I_PIECE, J_PIECE, L_PIECE, O_PIECE, S_PIECE, T_PIECE, Z_PIECE
 
 include("Game/Game.jl")
 using .Game
-export TetrisGame, send_input!, play_step!, reset!
+export TetrisGame, send_input!, play_step!, reset!, get_preview_pieces
 
 
 function run_tetris()
