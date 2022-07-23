@@ -4,9 +4,11 @@ using GameZero
 
 export run_tetris
 
-# include("Utils/Utils.jl")
-# using .Utils
-# export Block, BLOCK_SIZE, STARTING_X_POS, STARTING_Y_POS, COLORS_DICT
+const PROJECT_ROOT = pkgdir(@__MODULE__)
+
+include("Utils/Utils.jl")
+using .Utils
+export MODELS_PATH
 
 include("Tetrominoes/Tetrominoes.jl")
 using .Tetrominoes
@@ -16,9 +18,13 @@ include("Game/Game.jl")
 using .Game
 export TetrisGame, send_input!, play_step!, reset!, get_preview_pieces
 
+include("Model/Model.jl")
+using .Model
 
-function run_tetris()
-    rungame("src/game.jl")
-end
+include("Agent/Agent.jl")
+using .Agent
+export TetrisAgent
+
+include("functions.jl")
 
 end

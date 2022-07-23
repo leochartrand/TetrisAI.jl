@@ -22,22 +22,32 @@ Function used to send inputs to the game.
 This is the only function of the tetris API that is available to the user. 
 Every attempt to change the game's state should be sent through this function.
 """
-function send_input!(game::AbstractGame, input::Symbol)
+function send_input!(game::AbstractGame, input::Union{AbstractArray{<:Integer}, Symbol})
     
-    let VALID_INPUTS = [      
+    let VALID_INPUTS = [
+        :nothing,   
         :move_left,
         :move_right,
-        :soft_drop,
         :hard_drop,
         :rotate_clockwise,
         :rotate_counter_clockwise,
         :hold_piece
         ]
-        if input in VALID_INPUTS
-            f = Symbol(:input_, input, :!)
-            getfield(@__MODULE__, f)(game)
-        else
-            error("Invalid input: $input\n\nInput must be in:\n$VALID_INPUTS")
+        if typeof(input) <: AbstractArray{<:Integer}
+            input = argmax(input)
+            if 1 <= input <= length(VALID_INPUTS)
+                f = Symbol(:input_, VALID_INPUTS[input], :!)
+                getfield(@__MODULE__, f)(game)
+            else
+                error("Invalid input: $input\n\nInput must be between: [1, $(length(VALID_INPUTS))]")
+            end
+        elseif typeof(input) == Symbol
+            if input in VALID_INPUTS
+                f = Symbol(:input_, input, :!)
+                getfield(@__MODULE__, f)(game)
+            else
+                error("Invalid input: $input\n\nInput must be in:\n$VALID_INPUTS")
+            end
         end
     end
     return
@@ -48,26 +58,64 @@ Advance the game state by one state.
 """
 function play_step!(game::AbstractGame)
 
+    reward = 0
+    game_over = false
+
     if is_collision(game.grid, game.active_piece)
         
         # Check for game over collision at starting row
         if game.active_piece.row == 2
-            game.is_over = true
-            return game.is_over
+            reward = -100
+            game_over = true
+            return reward, game_over, game.score
         end
 
         # Freeze the piece in place and get a new piece
         game.active_piece = pop_piece!(game.bag)      
 
         # Check if we have cleared lines only when piece is dropped
-        check_for_lines!(game)
+        lines = check_for_lines!(game)
+        
+        # Adjust reward accoring to amount of lines cleared
+        if lines != 0
+            reward = [1, 5, 10, 50][lines]
+        end
     else
         clear_piece_cells!(game.grid, game.active_piece)
         drop!(game.active_piece)
         # Draws the new piece on the grid
         put_piece!(game.grid, game.active_piece)
     end
-    return game.is_over
+    return return reward, game_over, game.score
+end
+
+
+function get_state(game::AbstractGame)
+
+    # Empty state before construction
+    state = Int[]
+
+    let nb_pieces = 7
+        # Adding the holding piece
+        piece_vector = zeros(Int, nb_pieces)
+        if game.hold_piece !== nothing
+            piece_vector[game.hold_piece.color] = 1
+        end
+        state = vcat(state, piece_vector)
+
+        # Adding the preview pieces to the game state
+        for piece in get_preview_pieces(game.bag)
+            piece_vector = zeros(Int, nb_pieces)
+            piece_vector[piece.color] = 1
+            state = vcat(state, piece_vector)
+        end
+    end
+    
+    # Adding the game board to the state vector
+    state = vcat(state, reshape(transpose(game.grid.cells), (:,)))
+
+    # Making sure the vector is all int type
+    return state
 end
 
 function reset!(game::AbstractGame)
@@ -88,11 +136,12 @@ Clear full lines on the grid and adjust the score accordingly.
 T-spins and exotic scoring not supported yet.
 """
 function check_for_lines!(game::AbstractGame)
+    
+    local cleared_lines = 0
+    
     let NB_VISIBLE_ROWS = 20,
         NB_HIDDEN_ROWS = game.grid.rows - NB_VISIBLE_ROWS,
         SCORE_LIST = [100, 300, 500, 800]   # Scores from single to tetris
-
-        local cleared_lines = 0
 
         # We ignore the hidden rows when looking for lines
         for row in NB_HIDDEN_ROWS+1:game.grid.rows
@@ -121,7 +170,7 @@ function check_for_lines!(game::AbstractGame)
             game.score += SCORE_LIST[cleared_lines] * (game.level + 1)
         end
     end
-    return
+    return cleared_lines
 end
 
 """
@@ -258,3 +307,8 @@ function input_hold_piece!(game::AbstractGame)
     put_piece!(game.grid, game.active_piece)
     return
 end
+
+"""
+Does nothing.
+"""
+function input_nothing!(game::AbstractGame) end

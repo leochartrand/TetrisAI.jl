@@ -2,6 +2,7 @@
 using TetrisAI
 
 global game = TetrisGame()
+global game_over = false
 
 # Sprites
 bg = Actor("bg.png")
@@ -116,10 +117,11 @@ end
 Checks for keyboard input.
 """
 function on_key_down(g::Game, k)
-    global game
-    if game.is_over
+    global game, game_over
+    if game_over
         if k == Keys.P
             reset!(game)
+            game_over = false
         end
         return
     end
@@ -153,10 +155,10 @@ end
 Increments the timer.
 """
 function tick()
-    global Timer, game, Gravity
+    global Timer, game, Gravity, game_over
     Timer += 1
     if Timer >= Gravity
-        play_step!(game)
+        _, game_over, _  = play_step!(game)
         levelUp()
         resetTimer()
     end
@@ -174,7 +176,7 @@ end
 Base GameZero.jl function, called every frame. Draws everything on screen.
 """
 function draw(g::Game)
-    global game
+    global game_over
     draw(bg)
     drawBoard()
     drawNextPieces()
@@ -198,7 +200,7 @@ function draw(g::Game)
     if Paused
         draw(pause)
     end
-    if game.is_over
+    if game_over
         draw(gameover)
     end
 end
@@ -207,8 +209,8 @@ end
 Base GameZero.jl function, called every frame. Updates the game state.
 """
 function update(g::Game)
-    global game
-    if !Paused && !game.is_over
+    global game, game_over
+    if !Paused && !game_over
         tick()
         # Check for constant input for soft drop
         if g.keyboard.Z || g.keyboard.LCTRL
