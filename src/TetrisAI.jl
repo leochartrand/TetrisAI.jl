@@ -2,7 +2,7 @@ module TetrisAI
     
 using GameZero
 
-export run_tetris
+export play_tetris, model_demo, train_agent, save_agent, load_agent
 
 const PROJECT_ROOT = pkgdir(@__MODULE__)
 
@@ -20,10 +20,11 @@ export TetrisGame, send_input!, play_step!, reset!, get_preview_pieces
 
 include("Model/Model.jl")
 using .Model
+export random_Net, load_model, save_model
 
 include("Agent/Agent.jl")
 using .Agent
-export TetrisAgent
+export TetrisAgent, RandomAgent, get_action
 
 include("functions.jl")
 

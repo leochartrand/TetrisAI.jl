@@ -7,7 +7,7 @@ function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
     TetrisAI.send_input!(game, move)
 
     # Play the step
-    reward, done, score = TetrisAI.Game.play_step!(game)
+    reward, done, score, _ = TetrisAI.Game.play_step!(game)
     new_state = TetrisAI.Game.get_state(game)
 
     # Train the short memory
@@ -65,7 +65,7 @@ function train_long_memory(agent::TetrisAgent)
     update!(agent, states, actions, rewards, next_states, dones)
 end
 
-function get_action(agent::TetrisAgent, state::AbstractArray{<:Integer}; rand_range=1:200, nb_outputs=7)
+function get_action(agent::AbstractAgent, state::AbstractArray{<:Integer}; rand_range=1:200, nb_outputs=7)
     agent.ϵ = 80 - agent.n_games
     final_move = zeros(Int, nb_outputs)
 

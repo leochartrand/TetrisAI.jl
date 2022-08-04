@@ -8,8 +8,10 @@ import StatsBase: sample
 import Zygote: Buffer
 
 export TetrisAgent,
+    RandomAgent,
     train!,
-    CircularBufferMemory
+    CircularBufferMemory,
+    get_action
 
 include("memory.jl")
 include("agents.jl")

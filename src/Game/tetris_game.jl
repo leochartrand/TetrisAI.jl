@@ -14,6 +14,8 @@ Base.@kwdef mutable struct TetrisGame{T<:Integer} <: AbstractGame
     active_piece::Tetrominoes.AbstractTetromino = pop_piece!(bag)
     hold_piece::Union{Tetrominoes.AbstractTetromino,Nothing} = nothing
     grid::Grid = put_piece!(Grid(), active_piece)
+    steps::T = 0
+    new_hold::Bool = false
 end
 
 """
@@ -67,11 +69,11 @@ function play_step!(game::AbstractGame)
         if game.active_piece.row == 2
             reward = -100
             game_over = true
-            return reward, game_over, game.score
+            return reward, game_over, game.score, game.steps
         end
 
         # Freeze the piece in place and get a new piece
-        game.active_piece = pop_piece!(game.bag)      
+        freeze_piece(game)
 
         # Check if we have cleared lines only when piece is dropped
         lines = check_for_lines!(game)
@@ -80,15 +82,29 @@ function play_step!(game::AbstractGame)
         if lines != 0
             reward = [1, 5, 10, 50][lines]
         end
+
+        print("frozen\n")
     else
         clear_piece_cells!(game.grid, game.active_piece)
         drop!(game.active_piece)
         # Draws the new piece on the grid
         put_piece!(game.grid, game.active_piece)
+
+        print("dropped\n")
     end
-    return return reward, game_over, game.score
+    return reward, game_over, game.score, game.steps
 end
 
+
+"""
+Freeze the piece in place and get a new piece
+"""
+function freeze_piece(game::AbstractGame)
+
+    game.active_piece = pop_piece!(game.bag)
+    game.new_hold = false
+
+end
 
 function get_state(game::AbstractGame)
 
@@ -158,6 +174,7 @@ function check_for_lines!(game::AbstractGame)
                 game.grid.cells[row, :] .= 0
                 cleared_lines += 1
                 downshift!(game.grid, row)
+                printstyled("CLEARED\n", color = :red)
             end
         end
 
@@ -168,6 +185,7 @@ function check_for_lines!(game::AbstractGame)
                 game.level += 1
             end
             game.score += SCORE_LIST[cleared_lines] * (game.level + 1)
+            printstyled(game.score, color = :blue)
         end
     end
     return cleared_lines
@@ -273,6 +291,8 @@ end
 
 function input_hard_drop!(game::AbstractGame)
 
+    print("hard drop\n")
+
     # Clear the space occupied by the active piece
     clear_piece_cells!(game.grid, game.active_piece)
 
@@ -283,28 +303,35 @@ function input_hard_drop!(game::AbstractGame)
 
     # Place the piece on the grid
     put_piece!(game.grid, game.active_piece)
-    play_step!(game)
+    # play_step!(game)
     return
 end
 
 function input_hold_piece!(game::AbstractGame)
 
-    # Clear the space occupied by the active piece
-    clear_piece_cells!(game.grid, game.active_piece)
+    if game.new_hold == false
 
-    if game.hold_piece === nothing
-        # Place the active piece in the hold
-        game.hold_piece = game.active_piece
-        # Get a new piece
-        game.active_piece = pop_piece!(game.bag)
-    else
-        # Swaps the pieces
-        game.active_piece, game.hold_piece = game.hold_piece, game.active_piece
-        reset!(game.active_piece)
+        print("hold\n")
+
+        game.new_hold = true
+
+        # Clear the space occupied by the active piece
+        clear_piece_cells!(game.grid, game.active_piece)
+
+        if game.hold_piece === nothing
+            # Place the active piece in the hold
+            game.hold_piece = game.active_piece
+            # Get a new piece
+            game.active_piece = pop_piece!(game.bag)
+        else
+            # Swaps the pieces
+            game.active_piece, game.hold_piece = game.hold_piece, game.active_piece
+            reset!(game.active_piece)
+        end
+
+        # Place the piece on the grid
+        put_piece!(game.grid, game.active_piece)
     end
-
-    # Place the piece on the grid
-    put_piece!(game.grid, game.active_piece)
     return
 end
 

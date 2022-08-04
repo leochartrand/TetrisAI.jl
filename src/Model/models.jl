@@ -7,7 +7,7 @@ function random_Net(output_size::Integer)
 end
 
 """
-Small neural net consisting of 2 linear layers.
+Small neural net consisting of 3 linear layers.
 """
 function linear_QNet(input_size::T, output_size::T) where {T<:Integer}
     
