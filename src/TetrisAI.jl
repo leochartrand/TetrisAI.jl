@@ -16,7 +16,7 @@ export I_PIECE, J_PIECE, L_PIECE, O_PIECE, S_PIECE, T_PIECE, Z_PIECE
 
 include("Game/Game.jl")
 using .Game
-export TetrisGame, send_input!, play_step!, reset!, get_preview_pieces
+export TetrisGame, send_input!, tick!, reset!, get_preview_pieces
 
 include("Model/Model.jl")
 using .Model

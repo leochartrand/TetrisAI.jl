@@ -2,9 +2,8 @@
 using TetrisAI
 
 global game = TetrisGame()
-global game_over = false
 global Paused = false
-global stepTimer = 0
+global input = :nothing
 
 WIDTH = 1000
 HEIGHT = 1000
@@ -30,96 +29,54 @@ Z_preview = Actor("z_preview.png")
 
 global tetrominoesDict = Dict([(0, 0), (1, I), (2, J), (3, L), (4, O), (5, S), (6, T), (7, Z)])
 global previewsDict = Dict([(0, 0), (1, I_preview), (2, J_preview), (3, L_preview), (4, O_preview), (5, S_preview), (6, T_preview), (7, Z_preview)])
-global gravityDict = Dict([(0, 48), (1,43), (2,38), (3,33), (4,28), (5,23), (6,18), (7,13), (8,8), (9,6), (10,5), (11,5), (12,5), (13,4), (14,4), (15,4), (16,3), (17,3), (18,3), (19,2), (20,2), (21,2), (22,2), (23,2), (24,2), (25,2), (26,2), (27,2), (28,2), (29,1)])
-
-"""
-Sets gravity according to the game level (stops checking at level 30 and over).
-"""
-function levelUp()
-    if game.level < 30
-        global Gravity = gravityDict[game.level]
-    end
-end
-
-Gravity = levelUp()
-
-"""
-Pauses or unpauses the game.
-"""
-function pauseGame()
-    global Paused = !Paused
-end
-
-"""
-Quits the game.
-"""
-function quitGame()
-    exit()
-end
 
 """
 Checks for keyboard input.
 """
 function on_key_down(g::Game, k)
-    global game, game_over, Gravity, stepTimer
+    global game, Paused, input
+    # Pause, debug and quit
     if k == Keys.P
-        if game_over
+        if game.is_over
+            # Resets the game when game is over
             reset!(game)
-            game_over = false
+            input = :nothing
         else
-            pauseGame()
+            # Pauses or unpauses the game
+            Paused = !Paused
         end
     end
-    if !Paused
-        if (k == Keys.LEFT)
-            send_input!(game, :move_left)
-        elseif (k == Keys.RIGHT)
-            send_input!(game, :move_right)
-        elseif (k == Keys.UP || k == Keys.X)
-            send_input!(game, :rotate_clockwise)
-        elseif (k == Keys.DOWN)
-            send_input!(game, :rotate_counter_clockwise)
-        elseif (k == Keys.SPACE)
-            send_input!(game, :hard_drop)
-            stepTimer = Gravity
-        elseif (k == Keys.LSHIFT || k == Keys.C)
-            send_input!(game, :hold_piece)
-        elseif (k == Keys.D)
-            # Debug print
-            println(game)
-        end
+    if k == Keys.D
+        # Debug print
+        println(game)
     end
     if k == Keys.Q
-        quitGame()
+        # Quits the game (exits the julia environment)
+        exit()
     end
-end
-
-"""
-Increments the timer.
-"""
-function tick()
-    global stepTimer, game, Gravity, game_over
-    stepTimer += 1
-    if stepTimer >= Gravity
-        _, game_over, _, _  = play_step!(game)
-        levelUp()
-        resetStepTimer()
+    # Tetris Input
+    if !Paused
+        if (k == Keys.LEFT)
+            input = :move_left
+        elseif (k == Keys.RIGHT)
+            input = :move_right
+        elseif (k == Keys.UP || k == Keys.X)
+            input = :rotate_clockwise
+        elseif (k == Keys.DOWN)
+            input = :rotate_counter_clockwise
+        elseif (k == Keys.SPACE)
+            input = :hard_drop
+        elseif (k == Keys.LSHIFT || k == Keys.C)
+            input = :hold_piece
+        end
     end
-    return
-end
-
-"""
-Resets the step timer.
-"""
-function resetStepTimer()
-    global stepTimer = 0
 end
 
 """
 Base GameZero.jl function, called every frame. Draws everything on screen.
 """
 function draw(g::Game)
-    global game, Paused, game_over
+    global game, Paused
     
     draw(background)
 
@@ -172,7 +129,7 @@ function draw(g::Game)
     if Paused
         draw(pause_overlay)
     end
-    if game_over
+    if game.is_over
         draw(gameover_overlay)
     end
 end
@@ -181,12 +138,16 @@ end
 Base GameZero.jl function, called every frame. Updates the game state.
 """
 function update(g::Game)
-    global game, game_over
-    if !Paused && !game_over
-        tick()
+    global game, Paused, input
+    if !Paused && !game.is_over
+        send_input!(game, input)
+        tick!(game)
+        # Reset input for next tick
+        input = :nothing
         # Check for constant input for soft drop
-        if g.keyboard.Z || g.keyboard.LCTRL
-            tick()
+        if g.keyboard.Z || g.keyboard.LCTRL 
+            send_input!(game, :nothing)
+            tick!(game)
         end
     end
 end

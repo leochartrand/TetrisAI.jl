@@ -7,7 +7,7 @@ function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
     TetrisAI.send_input!(game, move)
 
     # Play the step
-    reward, done, score, _ = TetrisAI.Game.play_step!(game)
+    reward, done, score = TetrisAI.Game.tick!(game)
     new_state = TetrisAI.Game.get_state(game)
 
     # Train the short memory
