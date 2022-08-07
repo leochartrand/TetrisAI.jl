@@ -10,7 +10,6 @@ global model_name = ""
 
 open(joinpath(MODELS_PATH, "current_model"), "r") do file
     global model_name = readline(file)
-    print(model_name)
 end
 
 global agent = load_agent(model_name)

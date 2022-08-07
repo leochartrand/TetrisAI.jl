@@ -64,7 +64,7 @@ Advance the game state by one state.
 """
 function tick!(game::AbstractGame)
 
-    reward = 1
+    reward = 0
     game.steps +=1
     game.gravitySteps += 1
 
@@ -72,7 +72,7 @@ function tick!(game::AbstractGame)
         
         # Check for game over collision at starting row
         if game.active_piece.row == 2
-            reward = -1000
+            reward = -100
             game.is_over = true
             return reward, game.is_over, game.score
         end
@@ -86,7 +86,7 @@ function tick!(game::AbstractGame)
         
         # Adjust reward accoring to amount of lines cleared
         if lines != 0
-            reward = [10, 50, 100, 500][lines]
+            reward = [1, 5, 10, 50][lines]
         end
     elseif game.gravitySteps >= game.gravity
         game.gravitySteps = 0
@@ -105,11 +105,11 @@ function get_state(game::AbstractGame)
 
     let nb_pieces = 7
         # Adding the holding piece
-        piece_vector = zeros(Int, nb_pieces)
         if game.hold_piece !== nothing
+            piece_vector = zeros(Int, nb_pieces)
             piece_vector[game.hold_piece.color] = 1
+            state = vcat(state, piece_vector)
         end
-        state = vcat(state, piece_vector)
 
         # Adding the preview pieces to the game state
         for piece in get_preview_pieces(game.bag)
@@ -119,8 +119,11 @@ function get_state(game::AbstractGame)
         end
     end
     
+    # Generating board state
+    board_state = get_state(game.grid, game.active)
+
     # Adding the game board to the state vector
-    state = vcat(state, reshape(transpose(game.grid.cells), (:,)))
+    state = vcat(state, reshape(transpose(board_state), (:,)))
 
     # Making sure the vector is all int type
     return state

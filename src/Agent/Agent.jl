@@ -4,6 +4,7 @@ import ..TetrisAI
 
 import DataStructures: CircularBuffer
 import Flux
+import CUDA
 import StatsBase: sample
 import Zygote: Buffer
 

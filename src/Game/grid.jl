@@ -45,6 +45,28 @@ function downshift!(g::Grid, row::Int)
 end
 
 """
+Generates a simplified grid
+"""
+function get_state(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+    # Creates a copy of the grid
+    state = g.cells
+    # Simplifies representation of occupied cells
+    for i in 1:23, j in 1:10
+        if state[i,j] > 0
+            state[i,j] = 1
+        end
+    end
+    # Highlights the active piece
+    for i in 1:size(t, 1), j in 1:size(t, 2)
+        if t[i, j] == t.color
+            state[t.row+i-1, t.col+j-1] = 2
+        end
+    end
+    # Return visible grid
+    return state
+end
+
+"""
 Puts a piece on the grid
 """
 function put_piece!(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
