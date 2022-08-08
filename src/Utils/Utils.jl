@@ -1,8 +1,7 @@
 module Utils
 
-export Block, BLOCK_SIZE, STARTING_X_POS, STARTING_Y_POS, COLORS_DICT
+export MODELS_PATH
 
-include("constants.jl")
-include("block.jl")
+include("config.jl")
 
 end # module
