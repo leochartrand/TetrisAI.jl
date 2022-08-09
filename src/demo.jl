@@ -1,5 +1,14 @@
 #init 
 using TetrisAI
+using CUDA 
+import Flux: gpu, cpu
+
+if CUDA.functional()
+    CUDA.allowscalar(false)
+    device = gpu
+else
+    device = cpu
+end
 
 global game = TetrisGame()
 global Paused = false
@@ -12,6 +21,7 @@ open(joinpath(MODELS_PATH, "current_model"), "r") do file
 end
 
 global agent = load_agent(model_name)
+agent.model = agent.model |> device
 
 WIDTH = 1000
 HEIGHT = 1000

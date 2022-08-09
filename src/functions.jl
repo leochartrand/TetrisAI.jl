@@ -1,8 +1,18 @@
 import GameZero: rungame
 using ProgressBars
+using CUDA 
+using Plots
+import Flux: gpu
 
 import TetrisAI: Game, MODELS_PATH
 import TetrisAI.Agent: AbstractAgent
+
+if CUDA.functional()
+    CUDA.allowscalar(false)
+    device = gpu
+else
+    device = cpu
+end
 
 function play_tetris()
     rungame("src/play.jl")
@@ -51,21 +61,27 @@ end
 
 function train_agent(agent::AbstractAgent; N::Int=100)
 
+    agent.model = agent.model |> device
+
     # Creating the initial game
     game = TetrisGame()
+    scores = Int[]
 
     iter = ProgressBar(1:N)
     set_description(iter, "Training the agent on $N games:")
 
     for _ in iter
         done = false
+        score = 0
 
         while !done
-            done = train!(agent, game)
+            done, score = train!(agent, game)
         end
+        push!(scores,score)
     end
 
     @info "Agent high score after $N games => $(agent.record) pts"
+    display(plot(1:N, scores, title="Agent performance over $N games"))
 end
 
 function save_agent(name::AbstractString, agent::AbstractAgent)

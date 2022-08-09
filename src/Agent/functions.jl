@@ -1,3 +1,13 @@
+using CUDA
+import Flux: gpu, cpu
+
+if CUDA.functional()
+    CUDA.allowscalar(false)
+    device = gpu
+else
+    device = cpu
+end
+
 function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
     # Get the current step
     old_state = TetrisAI.Game.get_state(game)
@@ -27,7 +37,7 @@ function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
         end
     end
 
-    return done
+    return done, score
 end
 
 function train_memory(
@@ -90,7 +100,9 @@ function get_action(agent::AbstractAgent, state::AbstractArray{<:Integer}; rand_
         move = rand(1:nb_outputs)
         final_move[move] = 1
     else
+        state = state |> device
         pred = agent.model(state)
+        pred = pred |> cpu
         final_move[Flux.onecold(pred)] = 1
     end
 
@@ -112,14 +124,15 @@ function update!(
     end
 
     # Batching the states and converting data to Float32 (done implicitly otherwise)
-    state = Flux.batch(state) |> x -> convert.(Float32, x)
-    next_state = Flux.batch(next_state) |> x -> convert.(Float32, x)
+    state = Flux.batch(state) |> x -> convert.(Float32, x) |> gpu
+    next_state = Flux.batch(next_state) |> x -> convert.(Float32, x) |> gpu
     action = Flux.batch(action) |> x -> convert.(Float32, x)
     reward = Flux.batch(reward) |> x -> convert.(Float32, x)
     done = Flux.batch(done)
 
     # Model's prediction for next state
-    y = agent.model(next_state)
+    y = agent.model(next_state) 
+    y = y |> cpu
 
     # Get the model's params for back propagation
     ps = Flux.params(agent.model)
@@ -128,6 +141,7 @@ function update!(
     gs = Flux.gradient(ps) do
         # Forward pass
         ŷ = agent.model(state)
+        ŷ = ŷ |> cpu
 
         # Creating buffer to allow mutability when calculating gradients
         Rₙ = Buffer(ŷ, size(ŷ))
@@ -146,7 +160,7 @@ function update!(
             Rₙ[argmax(action[:, idx]), idx] = Qₙ
         end
         # Calculate the loss
-        agent.criterion(ŷ, copy(Rₙ))
+        agent.criterion(ŷ |> device, copy(Rₙ) |> device)
     end
 
     # Update model weights
