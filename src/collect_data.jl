@@ -1,13 +1,28 @@
 #init 
 using TetrisAI
+using JSON
+
+const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
+const STATES_PATH = joinpath(DATA_PATH, "states")
+const LABELS_PATH = joinpath(DATA_PATH, "labels")
 
 global game = TetrisGame()
 global Paused = false
 global input = :nothing
 global GUI = TetrisUI()
-global states = [Int[]]
-global labels = [Int[]]
+global states = []
+global labels = []
 global index = 0
+
+const input_dict = Dict(
+    :nothing => 1,   
+    :move_left => 2,
+    :move_right => 3,
+    :hard_drop => 4,
+    :rotate_clockwise => 5,
+    :rotate_counter_clockwise => 6,
+    :hold_piece => 7
+)
 
 WIDTH = 1000
 HEIGHT = 1000
@@ -21,7 +36,8 @@ function on_key_down(g::Game, k)
     if k == Keys.P
         if game.is_over
             # Writes training_data to file
-            
+            save_training_data()
+
             # Resets the game when game is over
             reset!(game)
             input = :nothing
@@ -58,6 +74,20 @@ end
 
 function save_training_data()
     global states, labels
+
+    for (idx, state) in states
+        filename = joinpath(STATES_PATH, "G$idx.json")
+        open(filename, "w") do f
+            JSON.print(f, JSON.json(Dict("state" => state)))
+        end
+    end
+
+    for (idx, label) in labels
+        filename = joinpath(LABELS_PATH, "G$idx.json")
+        open(filename, "w") do f
+            JSON.print(f, JSON.json(Dict("action" => label)))
+        end
+    end
     # Iterate over states[] and labels[]
         # For each in array, touch and write to file
 end
@@ -76,18 +106,22 @@ Base GameZero.jl function, called every frame. Updates the game state.
 function update(g::Game)
     global game, Paused, input, agent, states, labels, index
     if !Paused && !game.is_over
-        # Get old state
-        old_state = get_state(game)
+        
+        # Right now we are only interested in non nothing moves
+        if input != :nothing
+            # Save training data
+            state = get_state(game)
+            label = input_dict[input]
+            push!(states, (index, state))
+            push!(labels, (index, label))
+            index += 1
+        end
+
+
         # Sends input and get new state
         send_input!(game, input)
-        reward, done, score = tick!(game)
-        new_state = get_state(game)
-        # Get one hot vector representation of input
-        action = TetrisAI.Game.convert_input_to_vector(input)
-        # Save training data
-        push!(states, old_state)
-        push!(labels, action)
-        index += 1
+        _, _, _ = tick!(game)
+
         # Reset input for next tick
         input = :nothing
         # Check for constant input for soft drop
