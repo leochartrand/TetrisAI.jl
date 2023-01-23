@@ -16,6 +16,7 @@ Base.@kwdef mutable struct TetrisGame{T<:Integer} <: AbstractGame
     grid::Grid = put_piece!(Grid(), active_piece)
     steps::T = 0
     new_hold::Bool = false
+    hard_dropped::Bool = false
     gravity::T = 48
     gravitySteps::T = 0
 end
@@ -59,6 +60,26 @@ function send_input!(game::AbstractGame, input::Union{AbstractArray{<:Integer}, 
     return
 end
 
+function convert_input_to_vector(input::Symbol)
+    action = zeros(Int, 7)
+    if input == :nothing
+        action[1] = 1
+    elseif input == :move_left
+        action[2] = 1
+    elseif input == :move_right
+        action[3] = 1
+    elseif input == :hard_drop
+        action[4] = 1
+    elseif input == :rotate_clockwise
+        action[5] = 1
+    elseif input == :rotate_counter_clockwise
+        action[6] = 1
+    elseif input == :hold_piece
+        action[7] = 1
+    end
+    return action
+end
+
 """
 Advance the game state by one state.
 """
@@ -78,8 +99,11 @@ function tick!(game::AbstractGame)
         end
 
         # Freeze the piece in place and get a new piece
-        game.active_piece = pop_piece!(game.bag)
-        game.new_hold = false
+        if game.gravitySteps >= game.gravity || game.hard_dropped
+            game.active_piece = pop_piece!(game.bag)
+            game.new_hold = false
+            game.hard_dropped = false
+        end
 
         # Check if we have cleared lines only when piece is dropped
         lines = check_for_lines!(game)
@@ -104,12 +128,12 @@ function get_state(game::AbstractGame)
     state = Int[]
 
     let nb_pieces = 7
+        piece_vector = zeros(Int, nb_pieces)
         # Adding the holding piece
         if game.hold_piece !== nothing
-            piece_vector = zeros(Int, nb_pieces)
             piece_vector[game.hold_piece.color] = 1
-            state = vcat(state, piece_vector)
         end
+        state = vcat(state, piece_vector)
 
         # Adding the preview pieces to the game state
         for piece in get_preview_pieces(game.bag)
@@ -120,7 +144,7 @@ function get_state(game::AbstractGame)
     end
     
     # Generating board state
-    board_state = get_state(game.grid, game.active)
+    board_state = get_state(game.grid, game.active_piece)
 
     # Adding the game board to the state vector
     state = vcat(state, reshape(transpose(board_state), (:,)))
@@ -138,6 +162,10 @@ function reset!(game::AbstractGame)
     game.active_piece = pop_piece!(game.bag)
     game.hold_piece = nothing
     game.grid = put_piece!(Grid(), game.active_piece)
+    game.steps = 0
+    game.new_hold = false
+    game.gravity = 48
+    game.gravitySteps = 0
     game.steps = 0
     game.new_hold = false
     game.gravity = 48
@@ -311,7 +339,8 @@ function input_hard_drop!(game::AbstractGame)
 
     # Place the piece on the grid
     put_piece!(game.grid, game.active_piece)
-    # tick!(game)
+    
+    game.hard_dropped = true
     return
 end
 

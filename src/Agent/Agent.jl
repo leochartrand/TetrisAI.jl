@@ -12,7 +12,8 @@ export TetrisAgent,
     RandomAgent,
     train!,
     CircularBufferMemory,
-    get_action
+    get_action,
+    train_memory
 
 include("memory.jl")
 include("agents.jl")

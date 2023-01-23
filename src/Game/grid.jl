@@ -49,7 +49,7 @@ Generates a simplified grid
 """
 function get_state(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
     # Creates a copy of the grid
-    state = g.cells
+    state = deepcopy(g.cells)
     # Simplifies representation of occupied cells
     for i in 1:23, j in 1:10
         if state[i,j] > 0
