@@ -1,6 +1,5 @@
 import GameZero: rungame
 using ProgressBars
-<<<<<<< HEAD
 using CUDA 
 using Plots
 import Flux: gpu
