@@ -166,10 +166,6 @@ function reset!(game::AbstractGame)
     game.new_hold = false
     game.gravity = 48
     game.gravitySteps = 0
-    game.steps = 0
-    game.new_hold = false
-    game.gravity = 48
-    game.gravitySteps = 0
     return game
 end
 

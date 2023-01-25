@@ -7,6 +7,6 @@ import GameZero: draw
 
 export TetrisUI
 
-include("gui.jl")
+include("tetris_gui.jl")
 
 end # module
