@@ -1,6 +1,7 @@
 #init 
 using TetrisAI
 using JSON
+using Dates
 
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 const STATES_PATH = joinpath(DATA_PATH, "states")
@@ -13,6 +14,7 @@ global GUI = TetrisUI()
 global states = []
 global labels = []
 global index = 0
+global json = ".json"
 
 const input_dict = Dict(
     :nothing => 1,   
@@ -74,20 +76,58 @@ end
 
 function save_training_data()
     global states, labels
+    arr = []
 
-    for (idx, state) in states
-        filename = joinpath(STATES_PATH, "G$idx.json")
-        open(filename, "w") do f
-            JSON.print(f, JSON.json(Dict("state" => state)))
+    suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
+    stateFile = "states_" * suffix * json
+    actionFile = "actions_" * suffix * json
+
+    stateFileName = joinpath(STATES_PATH, stateFile)
+    actionFileName = joinpath(LABELS_PATH, actionFile)
+
+    open(stateFileName, "a") do f
+        #for i in eachindex(states)
+        for (idx, state) in states
+            #println(states[i])
+            state = JSON.json(Dict("state$idx" => state))
+            push!(arr, state)
         end
+        #JSON.print(f, arr, size(states, 1))
+        JSON.print(f, arr)
     end
 
-    for (idx, label) in labels
-        filename = joinpath(LABELS_PATH, "G$idx.json")
-        open(filename, "w") do f
-            JSON.print(f, JSON.json(Dict("action" => label)))
+    empty!(arr)
+    open(actionFileName, "a") do f
+        #for i in eachindex(labels)
+        for (idx, label) in labels
+            #println(labels[i])
+            label = JSON.json(Dict("label$idx" => label))
+            push!(arr, label)
         end
+    #JSON.print(f, arr, size(labels, 1))
+    JSON.print(f, arr)
     end
+
+
+
+    #for (idx, state) in states
+        # filename = joinpath(STATES_PATH, "G$idx.json")
+        # open(filename, "w") do f
+        #     JSON.print(f, JSON.json(Dict("state" => state)))
+        # end
+
+
+
+    #end
+
+    #for (idx, label) in labels
+        # filename = joinpath(LABELS_PATH, "G$idx.json")
+        # open(filename, "w") do f
+        #     JSON.print(f, JSON.json(Dict("action" => label)))
+        # end
+    #end
+
+
     # Iterate over states[] and labels[]
         # For each in array, touch and write to file
 end

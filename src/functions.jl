@@ -177,3 +177,7 @@ function load_agent(name::AbstractString)
 
     return agent
 end
+
+function hello()
+    print("hello fuck")
+end
