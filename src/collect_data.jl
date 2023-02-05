@@ -6,6 +6,7 @@ using Dates
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 const STATES_PATH = joinpath(DATA_PATH, "states")
 const LABELS_PATH = joinpath(DATA_PATH, "labels")
+const SCORE_PATH = joinpath(DATA_PATH, "scoreboard")
 
 global game = TetrisGame()
 global Paused = false
@@ -28,6 +29,14 @@ const input_dict = Dict(
 
 WIDTH = 1000
 HEIGHT = 1000
+
+if isfile(SCORE_PATH)
+    rm(SCORE_PATH)
+end
+
+open(SCORE_PATH, "a") do f
+    write(f, "<GAME>         : <SCORE>\n")
+end
 
 """
 Checks for keyboard input.
@@ -86,50 +95,26 @@ function save_training_data()
     actionFileName = joinpath(LABELS_PATH, actionFile)
 
     open(stateFileName, "a") do f
-        #for i in eachindex(states)
         for (idx, state) in states
-            #println(states[i])
             state = JSON.json(Dict("state$idx" => state))
             push!(arr, state)
         end
-        #JSON.print(f, arr, size(states, 1))
         JSON.print(f, arr)
     end
 
     empty!(arr)
     open(actionFileName, "a") do f
-        #for i in eachindex(labels)
         for (idx, label) in labels
-            #println(labels[i])
             label = JSON.json(Dict("label$idx" => label))
             push!(arr, label)
         end
-    #JSON.print(f, arr, size(labels, 1))
     JSON.print(f, arr)
     end
 
+    open(SCORE_PATH, "a") do f
+        write(f, "$suffix : $(game.score)\n")
+    end
 
-
-    #for (idx, state) in states
-        # filename = joinpath(STATES_PATH, "G$idx.json")
-        # open(filename, "w") do f
-        #     JSON.print(f, JSON.json(Dict("state" => state)))
-        # end
-
-
-
-    #end
-
-    #for (idx, label) in labels
-        # filename = joinpath(LABELS_PATH, "G$idx.json")
-        # open(filename, "w") do f
-        #     JSON.print(f, JSON.json(Dict("action" => label)))
-        # end
-    #end
-
-
-    # Iterate over states[] and labels[]
-        # For each in array, touch and write to file
 end
 
 """
