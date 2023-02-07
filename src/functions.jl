@@ -13,6 +13,12 @@ using Flux: onehotbatch, onecold
 using Flux.Data: DataLoader
 using Flux.Losses: logitcrossentropy
 
+#using AWSS3, AWS, FilePathsBase
+using AWSS3
+using AWS
+
+
+
 # SHould be refactored
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 const STATES_PATH = joinpath(DATA_PATH, "states")
@@ -179,5 +185,13 @@ function load_agent(name::AbstractString)
 end
 
 function hello()
-    print("hello fuck")
+    #print("hello fuck")
+
+    creds = AWSCredentials("AKIARNOH56OCXEW7GC6K", "OSubXlpEK53LUol4e9ruiyv1+hZE3zCi87WKgRSQ")
+    config = AWSConfig(creds, "us‑east‑1", "")
+
+    p = S3Path("s3://tetris-ai/testaws.json", config=global_aws_config(config))
+
+    fuck = AWSS3.read(p)
+    print(fuck)
 end

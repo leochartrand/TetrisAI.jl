@@ -1,5 +1,8 @@
 using TetrisAI
 using JSON
+using HTTP
+
+# using AWSS3, AWS, FilePathsBase
 
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 
@@ -13,7 +16,7 @@ global act = [6, 4, 1, 0, 3, 4, 0, 2, 2, 3]
 
 
 function test()
-    print("Gofofo")
+    print("mmmmm")
 end
 
 function jsonState() 
@@ -41,3 +44,29 @@ function jsonAction()
 end
 
 
+# function wtf() {
+#     p = S3Path("https://nj5l066y09.execute-api.us-east-1.amazonaws.com/v1/", config=global_aws_config())
+# }
+
+
+function fuckme()
+    response = HTTP.get("https://nj5l066y09.execute-api.us-east-1.amazonaws.com/v1/tetris-ai/testaws.json")
+
+    arr = response.body
+    pushfirst!(arr, UInt8(34))
+    push!(arr, UInt8(34))
+    print(arr)
+    res = String(arr)
+    print(res*"\n")
+
+    JSON.print(stdout, res)
+
+    open("data/download2.json", "w") do f
+        
+        #j = JSON.parse(res)
+
+        #JSON.parse(res)
+        mama = "{ \"fuck\" : \"you\" }"
+        JSON.print(f, res)
+    end
+end
