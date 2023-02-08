@@ -2,6 +2,7 @@
 using TetrisAI
 using JSON
 using Dates
+using AWS
 using AWS: @service
 @service S3
 
@@ -18,6 +19,7 @@ global states = []
 global labels = []
 global index = 0
 global json = ".json"
+global PROFILE = "tetris-ai"
 
 const input_dict = Dict(
     :nothing => 1,   
@@ -96,6 +98,8 @@ function save_training_data()
 
     stateFileName = joinpath(STATES_PATH, stateFile)
     actionFileName = joinpath(LABELS_PATH, actionFile)
+
+    AWSCredentials(profile=PROFILE)
 
     open(stateFileName, "a") do f
         for (idx, state) in states

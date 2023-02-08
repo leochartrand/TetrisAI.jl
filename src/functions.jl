@@ -13,6 +13,7 @@ using Flux: onehotbatch, onecold
 using Flux.Data: DataLoader
 using Flux.Losses: logitcrossentropy
 
+using AWS
 using AWS: @service
 @service S3
 
@@ -22,7 +23,7 @@ using AWS: @service
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 const STATES_PATH = joinpath(DATA_PATH, "states")
 const LABELS_PATH = joinpath(DATA_PATH, "labels")
-const BUCKET_NAME = "tetris-ai"
+const BUCKET_NAME = PROFILE = "tetris-ai"
 
 if CUDA.functional()
     CUDA.allowscalar(false)
@@ -184,7 +185,8 @@ function load_agent(name::AbstractString)
     return agent
 end
 
-function download_data()
+function download_data()    
+    AWSCredentials(profile=PROFILE)
     cnt = (S3.list_objects(BUCKET_NAME))["Contents"]
 
     for i in cnt
@@ -201,7 +203,7 @@ end
 
 function download_to(directory::String, file::String)
     open("$directory/$file", "w") do f
-        content = S3.get_object(BUCKET_NAME, file)
-        JSON.print(f, String(content))
+        content = S3.get_object(BUCKET_NAME, file, Dict("response-content-type" => "application/json"))
+        JSON.print(f, content)
     end
 end
