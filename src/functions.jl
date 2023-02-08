@@ -202,6 +202,6 @@ end
 function download_to(directory::String, file::String)
     open("$directory/$file", "w") do f
         content = S3.get_object(BUCKET_NAME, file)
-        JSON.print(f, content)
+        JSON.print(f, String(content))
     end
 end
