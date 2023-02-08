@@ -13,9 +13,8 @@ using Flux: onehotbatch, onecold
 using Flux.Data: DataLoader
 using Flux.Losses: logitcrossentropy
 
-#using AWSS3, AWS, FilePathsBase
-using AWSS3
-using AWS
+using AWS: @service
+@service S3
 
 
 
@@ -23,6 +22,7 @@ using AWS
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 const STATES_PATH = joinpath(DATA_PATH, "states")
 const LABELS_PATH = joinpath(DATA_PATH, "labels")
+const BUCKET_NAME = "tetris-ai"
 
 if CUDA.functional()
     CUDA.allowscalar(false)
@@ -184,14 +184,24 @@ function load_agent(name::AbstractString)
     return agent
 end
 
-function hello()
-    #print("hello fuck")
+function download_data()
+    cnt = (S3.list_objects(BUCKET_NAME))["Contents"]
 
-    creds = AWSCredentials("AKIARNOH56OCXEW7GC6K", "OSubXlpEK53LUol4e9ruiyv1+hZE3zCi87WKgRSQ")
-    config = AWSConfig(creds, "us‑east‑1", "")
+    for i in cnt
+        filename = i["Key"]
+        if startswith(filename, "actions_")
+            download_to(LABELS_PATH, filename)
+        elseif startswith(filename, "states_")
+            download_to(STATES_PATH, filename)
+        else
+            continue
+        end
+    end
+end
 
-    p = S3Path("s3://tetris-ai/testaws.json", config=global_aws_config(config))
-
-    fuck = AWSS3.read(p)
-    print(fuck)
+function download_to(directory::String, file::String)
+    open("$directory/$file", "w") do f
+        content = S3.get_object(BUCKET_NAME, file)
+        JSON.print(f, content)
+    end
 end

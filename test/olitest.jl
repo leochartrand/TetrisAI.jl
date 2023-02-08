@@ -1,6 +1,9 @@
 using TetrisAI
 using JSON
 using HTTP
+using AWS: @service
+@service S3
+
 
 # using AWSS3, AWS, FilePathsBase
 
@@ -24,10 +27,11 @@ function jsonState()
     bitch = []
     open(filename, "a") do f
         for i in eachindex(stall)
-            a = JSON.json(Dict("state$i" => stall[i]))
+            a = Dict("state$i" => stall[i])
             push!(bitch, a)
         end
-        JSON.print(f, bitch, size(stall, 1))
+        S3.put_object("tetris-ai", "state.json", Dict("body" => JSON.json(bitch)))
+        JSON.print(f, bitch)
     end
 end
 
@@ -36,17 +40,13 @@ function jsonAction()
     bitch = []
     open(filename, "a") do f
         for i in eachindex(act)
-            a = JSON.json(Dict("action$i" => act[i]))
+            a = Dict("action$i" => act[i])
             push!(bitch, a)
         end
-    JSON.print(f, bitch, size(act, 1))
+        S3.put_object("tetris-ai", "action2.json", Dict("body" => JSON.json(bitch)))
+        JSON.print(f, bitch)
     end
 end
-
-
-# function wtf() {
-#     p = S3Path("https://nj5l066y09.execute-api.us-east-1.amazonaws.com/v1/", config=global_aws_config())
-# }
 
 
 function fuckme()

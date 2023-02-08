@@ -2,6 +2,8 @@
 using TetrisAI
 using JSON
 using Dates
+using AWS: @service
+@service S3
 
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 const STATES_PATH = joinpath(DATA_PATH, "states")
@@ -90,25 +92,30 @@ function save_training_data()
     suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
     stateFile = "states_" * suffix * json
     actionFile = "actions_" * suffix * json
+    bucketname = "tetris-ai"
 
     stateFileName = joinpath(STATES_PATH, stateFile)
     actionFileName = joinpath(LABELS_PATH, actionFile)
 
     open(stateFileName, "a") do f
         for (idx, state) in states
-            state = JSON.json(Dict("state$idx" => state))
+            #state = JSON.json(Dict("state$idx" => state))
+            state = Dict("state$idx" => state)
             push!(arr, state)
         end
+        S3.put_object(bucketname, stateFile, Dict("body" => JSON.json(arr)))
         JSON.print(f, arr)
     end
 
     empty!(arr)
     open(actionFileName, "a") do f
         for (idx, label) in labels
-            label = JSON.json(Dict("label$idx" => label))
+            #label = JSON.json(Dict("label$idx" => label))
+            label = Dict("label$idx" => label)
             push!(arr, label)
         end
-    JSON.print(f, arr)
+        S3.put_object(bucketname, actionFile, Dict("body" => JSON.json(arr)))
+        JSON.print(f, arr)
     end
 
     open(SCORE_PATH, "a") do f
