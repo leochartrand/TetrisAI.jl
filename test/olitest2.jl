@@ -25,7 +25,7 @@ end
 
 function what()
     #AWSCredentials("AKIARNOH56OCXEW7GC6K", "OSubXlpEK53LUol4e9ruiyv1+hZE3zCi87WKgRSQ")
-    AWSCredentials(profile="tetris-ai")
+    #S3.AWSCredentials(profile="tetris")
     go = S3.get_object("tetris-ai", "action2.json")
     print(String(go))
 end

@@ -99,7 +99,8 @@ function save_training_data()
     stateFileName = joinpath(STATES_PATH, stateFile)
     actionFileName = joinpath(LABELS_PATH, actionFile)
 
-    AWSCredentials(profile=PROFILE)
+    #TODO: not working with profile. Not sure why??
+    #AWSCredentials(profile="tetris")
 
     open(stateFileName, "a") do f
         for (idx, state) in states

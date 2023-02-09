@@ -23,7 +23,7 @@ using AWS: @service
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 const STATES_PATH = joinpath(DATA_PATH, "states")
 const LABELS_PATH = joinpath(DATA_PATH, "labels")
-const BUCKET_NAME = PROFILE = "tetris-ai"
+const BUCKET_NAME = "tetris-ai"
 
 if CUDA.functional()
     CUDA.allowscalar(false)
@@ -186,7 +186,8 @@ function load_agent(name::AbstractString)
 end
 
 function download_data()    
-    AWSCredentials(profile=PROFILE)
+    #TODO: use profile
+    #AWSCredentials(profile=PROFILE)
     cnt = (S3.list_objects(BUCKET_NAME))["Contents"]
 
     for i in cnt

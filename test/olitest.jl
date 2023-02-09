@@ -64,3 +64,17 @@ function fuckme()
         JSON.print(f, res)
     end
 end
+
+function par()
+    t1 = Threads.@spawn parall()
+    t2 = Threads.@spawn parall()
+    wait(t1)
+    wait(t2)
+end
+
+function parall()
+    for i in 100:110
+        print(i)
+        sleep(1)
+    end
+end
