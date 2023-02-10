@@ -6,10 +6,13 @@ using AWS
 using AWS: @service
 @service S3
 
+import TetrisAI: game_over, set_game, data_list
+
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 const STATES_PATH = joinpath(DATA_PATH, "states")
 const LABELS_PATH = joinpath(DATA_PATH, "labels")
 const SCORE_PATH = joinpath(DATA_PATH, "scoreboard")
+const json = ".json"
 
 global game = TetrisGame()
 global Paused = false
@@ -18,8 +21,6 @@ global GUI = TetrisUI()
 global states = []
 global labels = []
 global index = 0
-global json = ".json"
-global PROFILE = "tetris-ai"
 
 const input_dict = Dict(
     :nothing => 1,   
@@ -67,6 +68,7 @@ function on_key_down(g::Game, k)
     end
     if k == Keys.Q
         # Quits the game (exits the julia environment)
+        set_game()
         exit()
     end
     # Tetris Input
@@ -88,44 +90,28 @@ function on_key_down(g::Game, k)
 end
 
 function save_training_data()
-    global states, labels
-    arr = []
+
 
     suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
-    stateFile = "states_" * suffix * json
-    actionFile = "actions_" * suffix * json
+    stateFile = "states_$suffix$json"
+    actionFile = "actions_$suffix$json"
     bucketname = "tetris-ai"
 
     stateFileName = joinpath(STATES_PATH, stateFile)
     actionFileName = joinpath(LABELS_PATH, actionFile)
 
-    #TODO: not working with profile. Not sure why??
-    #AWSCredentials(profile="tetris")
+    training_data = Dict(
+        "stateFile" => stateFile,
+        "actionFile" => actionFile,
+        "stateFileName" => stateFileName,
+        "actionFileName" => actionFileName,
+        "states" => states,
+        "labels" => labels
+    )
 
-    open(stateFileName, "a") do f
-        for (idx, state) in states
-            #state = JSON.json(Dict("state$idx" => state))
-            state = Dict("state$idx" => state)
-            push!(arr, state)
-        end
-        S3.put_object(bucketname, stateFile, Dict("body" => JSON.json(arr)))
-        JSON.print(f, arr)
-    end
+    push!(data_list, training_data)
 
-    empty!(arr)
-    open(actionFileName, "a") do f
-        for (idx, label) in labels
-            #label = JSON.json(Dict("label$idx" => label))
-            label = Dict("label$idx" => label)
-            push!(arr, label)
-        end
-        S3.put_object(bucketname, actionFile, Dict("body" => JSON.json(arr)))
-        JSON.print(f, arr)
-    end
-
-    open(SCORE_PATH, "a") do f
-        write(f, "$suffix : $(game.score)\n")
-    end
+    #upload_data(states, labels)
 
 end
 

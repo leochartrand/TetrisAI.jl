@@ -23,7 +23,6 @@ using AWS: @service
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 const STATES_PATH = joinpath(DATA_PATH, "states")
 const LABELS_PATH = joinpath(DATA_PATH, "labels")
-const BUCKET_NAME = "tetris-ai"
 
 if CUDA.functional()
     CUDA.allowscalar(false)
@@ -54,7 +53,15 @@ function model_demo(name::AbstractString)
 end
 
 function collect_data()
-    rungame("src/collect_data.jl")
+    #TODO: end thread when closing the game's window
+    t2 = Threads.@spawn process_data()
+    t1 = Threads.@spawn rungame("src/collect_data.jl")
+    wait(t1)
+    wait(t2)
+end
+
+function get_data()
+    download_data()
 end
 
 """
@@ -183,28 +190,4 @@ function load_agent(name::AbstractString)
     agent.model = TetrisAI.Model.load_model(name)
 
     return agent
-end
-
-function download_data()    
-    #TODO: use profile
-    #AWSCredentials(profile=PROFILE)
-    cnt = (S3.list_objects(BUCKET_NAME))["Contents"]
-
-    for i in cnt
-        filename = i["Key"]
-        if startswith(filename, "actions_")
-            download_to(LABELS_PATH, filename)
-        elseif startswith(filename, "states_")
-            download_to(STATES_PATH, filename)
-        else
-            continue
-        end
-    end
-end
-
-function download_to(directory::String, file::String)
-    open("$directory/$file", "w") do f
-        content = S3.get_object(BUCKET_NAME, file, Dict("response-content-type" => "application/json"))
-        JSON.print(f, content)
-    end
 end
