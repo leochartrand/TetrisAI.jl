@@ -68,7 +68,6 @@ function on_key_down(g::Game, k)
     end
     if k == Keys.Q
         # Quits the game (exits the julia environment)
-        set_game()
         exit()
     end
     # Tetris Input

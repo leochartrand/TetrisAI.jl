@@ -53,10 +53,10 @@ function model_demo(name::AbstractString)
 end
 
 function collect_data()
-    #TODO: end thread when closing the game's window
     t2 = Threads.@spawn process_data()
     t1 = Threads.@spawn rungame("src/collect_data.jl")
     wait(t1)
+    set_game()
     wait(t2)
 end
 
