@@ -2,9 +2,6 @@
 using TetrisAI
 using JSON
 using Dates
-using AWS
-using AWS: @service
-@service S3
 
 import TetrisAI: game_over, set_game, data_list
 
@@ -90,11 +87,9 @@ end
 
 function save_training_data()
 
-
     suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
     stateFile = "states_$suffix$json"
     actionFile = "actions_$suffix$json"
-    bucketname = "tetris-ai"
 
     stateFileName = joinpath(STATES_PATH, stateFile)
     actionFileName = joinpath(LABELS_PATH, actionFile)
@@ -109,9 +104,6 @@ function save_training_data()
     )
 
     push!(data_list, training_data)
-
-    #upload_data(states, labels)
-
 end
 
 """

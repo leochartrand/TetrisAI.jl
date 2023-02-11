@@ -13,10 +13,6 @@ using Flux: onehotbatch, onecold
 using Flux.Data: DataLoader
 using Flux.Losses: logitcrossentropy
 
-using AWS
-using AWS: @service
-@service S3
-
 
 
 # SHould be refactored

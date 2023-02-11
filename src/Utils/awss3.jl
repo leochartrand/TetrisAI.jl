@@ -3,8 +3,6 @@ using JSON
 using AWS: @service
 @service S3
 
-#const STATES_PATH = joinpath(DATA_PATH, "states")
-#const LABELS_PATH = joinpath(DATA_PATH, "labels")
 const BUCKET_NAME = "tetris-ai"
 
 global game_over = false
@@ -12,6 +10,7 @@ global data_list = []
 
 set_game() = (global game_over = !game_over)
 
+#Checks if new data ready to upload. If not tries again in 1 sec
 function process_data()
     while(!game_over)
         if isempty(data_list)
