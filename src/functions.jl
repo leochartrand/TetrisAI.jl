@@ -137,7 +137,12 @@ function pretrain_agent(model_name::AbstractString; lr::Float64 = 5e-4, batch_si
 
 end
 
-function train_agent(agent::AbstractAgent; N::Int=100)
+function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
+
+    update_rate::Int64 = 1
+    if limit_updates
+        update_rate = max(round(N * 0.05), 1)
+    end
 
     agent.model = agent.model |> device
 
@@ -148,15 +153,23 @@ function train_agent(agent::AbstractAgent; N::Int=100)
     iter = ProgressBar(1:N)
     set_description(iter, "Training the agent on $N games:")
 
-    for _ in iter
+    display(plot())
+
+    for i in iter
         done = false
         score = 0
 
         while !done
             done, score = train!(agent, game)
         end
+
         push!(scores,score)
+
+        if (i % update_rate) == 0
+            display(plot(1:i, scores, title="Agent performance over $N games"))
+        end
     end
+
 
     @info "Agent high score after $N games => $(agent.record) pts"
     display(plot(1:N, scores, title="Agent performance over $N games"))
