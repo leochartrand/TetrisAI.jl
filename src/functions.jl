@@ -139,6 +139,7 @@ end
 
 function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
 
+    graph_steps = round(N / 10)
     update_rate::Int64 = 1
     if limit_updates
         update_rate = max(round(N * 0.05), 1)
@@ -149,11 +150,10 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
     # Creating the initial game
     game = TetrisGame()
     scores = Int[]
+    sin_test = Float32[]
 
     iter = ProgressBar(1:N)
     set_description(iter, "Training the agent on $N games:")
-
-    display(plot())
 
     for i in iter
         done = false
@@ -164,15 +164,26 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
         end
 
         push!(scores,score)
+        push!(sin_test, sin.(i))
 
         if (i % update_rate) == 0
-            display(plot(1:i, scores, title="Agent performance over $N games"))
+            plot(1:i,
+                [scores, sin_test],
+                xlims=(0, N),
+                xticks=0:graph_steps:N,
+                ylims=(0, findmax(scores)[1]),
+                title="Agent performance over $N games",
+                linecolor = [:orange :blue],
+                linewidth = 2,
+                label=["scores" "sin(x)"])
+            xlabel!("Itérations")
+            ylabel!("Score")
+            display(plot!(legend=:outerbottom, legendcolumns=2))
         end
     end
 
 
     @info "Agent high score after $N games => $(agent.record) pts"
-    display(plot(1:N, scores, title="Agent performance over $N games"))
 end
 
 function save_agent(name::AbstractString, agent::AbstractAgent)
