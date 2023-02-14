@@ -1,3 +1,4 @@
+using Statistics
 
 # import ..Tetrominoes: rotate_left!, rotate_right!, drop!, move_left!, move_right!
 abstract type AbstractGame end
@@ -118,7 +119,7 @@ function tick!(game::AbstractGame)
         # As we score more and more lines, we change the scoring more and more to the
         # game's score instead of the intermediate rewards that are used only for the
         # early stages.
-        reward += Int(((1 - cte)computeIntermediateReward(game, lines)) + (cte * (lines ^ 2)))
+        reward += Int(round(((1 - cte) * computeIntermediateReward!(game, lines)) + (cte * (lines ^ 2))))
 
     elseif game.gravitySteps >= game.gravity
         game.gravitySteps = 0
@@ -131,54 +132,68 @@ function tick!(game::AbstractGame)
     return reward, game.is_over, game.score
 end
 
-function computeIntermediateReward(game::AbstractGame, lines::Int)
+function computeIntermediateReward!(game::AbstractGame, lines::Int)
     height_cte = -0.510066
     lines_cte = 0.760666
     holes_cte = -0.35663
     bumpiness_cte = -0.184483
 
-    height = aggregateHeight(game)
-    holes = countHoles(game)
-    bumps = computeBumpiness(game)
+    height, bumps, holes = fitnessStats(game)
+
+    print("height: ", height, " bumps: ", bumps, " holes: ", holes, " lines: ", lines, "\n")
 
     score = (height_cte * height) + (lines_cte * lines) + (holes_cte * holes) + (bumpiness_cte * bumps)
-    reward = game.last_score - score
-    game.last_score = score
+    reward = score - game.last_score
+    game.last_score = Int(round(score))
     return reward
 end
 
-function countHoles(game::AbstractGame)
-    return 0
-end
-
-function aggregateHeight(game::AbstractGame)
+function fitnessStats(game::AbstractGame)
     board_state = get_state(game.grid, game.active_piece)
     rows = game.grid.rows
     cols = game.grid.cols
     heights = Int[]
+    holes = 0
 
     # We parse the grid each column from top to the first occupied cell.
     # At the first occupied cell, we compute the height of that column.
 
     for c in 1:cols
+        found_first = false
+
         for r in 1:rows
-            cell = board_state[r][c]
+            cell = board_state[r, c]
+
             if cell == 1 # Cell is occupied
-                push!(heights, (rows - r + 1))
-                break
+                if !found_first 
+                    push!(heights, (rows - r + 1))
+                end
+                found_first = true
+            elseif cell == 0 # Cell is not occupied
+                if found_first
+                    holes += 1
+                end
             end
 
-            if r == rows && cell == 0 # When we reach the bottom of the grid
+            if r == rows && cell == 0 && !found_first # If the column is empty
                 push!(heights, 0)
             end
         end
     end
 
-    return mean(heights)
+    return mean(heights), computeBumpiness(heights), holes
 end
 
-function computeBumpiness(game::AbstractGame)
-    return 0
+function computeBumpiness(heights::AbstractArray)
+    bumpiness = 0
+    nb_cols = size(heights, 1)
+    for i in 1:nb_cols
+        if i != nb_cols
+            bumpiness += abs(heights[i] - heights[i + 1])
+        end
+    end
+
+    return bumpiness
 end
 
 function get_state(game::AbstractGame)
