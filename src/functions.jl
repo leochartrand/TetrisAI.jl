@@ -150,7 +150,7 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
     # Creating the initial game
     game = TetrisGame()
     scores = Int[]
-    sin_test = Float32[]
+    ticks = Int[]
 
     iter = ProgressBar(1:N)
     set_description(iter, "Training the agent on $N games:")
@@ -158,24 +158,25 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
     for i in iter
         done = false
         score = 0
-
+        nb_ticks = 0
         while !done
             done, score = train!(agent, game)
+            nb_ticks = nb_ticks + 1
         end
 
-        push!(scores,score)
-        push!(sin_test, sin.(i))
+        push!(scores, score)
+        push!(ticks, nb_ticks)
 
         if (i % update_rate) == 0
             plot(1:i,
-                [scores, sin_test],
+                [scores, ticks],
                 xlims=(0, N),
                 xticks=0:graph_steps:N,
-                ylims=(0, findmax(scores)[1]),
+                ylims=(0, max(findmax(scores)[1], findmax(ticks)[1])),
                 title="Agent performance over $N games",
                 linecolor = [:orange :blue],
                 linewidth = 2,
-                label=["scores" "sin(x)"])
+                label=["Scores" "Nombre de ticks"])
             xlabel!("Itérations")
             ylabel!("Score")
             display(plot!(legend=:outerbottom, legendcolumns=2))
