@@ -137,29 +137,54 @@ function pretrain_agent(model_name::AbstractString; lr::Float64 = 5e-4, batch_si
 
 end
 
-function train_agent(agent::AbstractAgent; N::Int=100)
+function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
+
+    graph_steps = round(N / 10)
+    update_rate::Int64 = 1
+    if limit_updates
+        update_rate = max(round(N * 0.05), 1)
+    end
 
     agent.model = agent.model |> device
 
     # Creating the initial game
     game = TetrisGame()
     scores = Int[]
+    ticks = Int[]
 
     iter = ProgressBar(1:N)
     set_description(iter, "Training the agent on $N games:")
 
-    for _ in iter
+    for i in iter
         done = false
         score = 0
-
+        nb_ticks = 0
         while !done
             done, score = train!(agent, game)
+            nb_ticks = nb_ticks + 1
         end
-        push!(scores,score)
+
+        push!(scores, score)
+        push!(ticks, nb_ticks)
+
+        if (i % update_rate) == 0
+            plot(1:i,
+                [scores, ticks],
+                xlims=(0, N),
+                xticks=0:graph_steps:N,
+                ylims=(0, max(findmax(scores)[1], findmax(ticks)[1])),
+                title="Agent performance over $N games",
+                linecolor = [:orange :blue],
+                linewidth = 2,
+                label=["Scores" "Nombre de ticks"])
+            xlabel!("Itérations")
+            ylabel!("Score")
+            display(plot!(legend=:outerbottom, legendcolumns=2))
+        end
     end
 
+
     @info "Agent high score after $N games => $(agent.record) pts"
-    display(plot(1:N, scores, title="Agent performance over $N games"))
 end
 
 function save_agent(name::AbstractString, agent::AbstractAgent)
