@@ -1,10 +1,15 @@
 #init 
 using TetrisAI
 using JSON
+using Dates
+
+import TetrisAI: game_over, set_game, data_list
 
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 const STATES_PATH = joinpath(DATA_PATH, "states")
 const LABELS_PATH = joinpath(DATA_PATH, "labels")
+const SCORE_PATH = joinpath(DATA_PATH, "scoreboard")
+const json = ".json"
 
 global game = TetrisGame()
 global Paused = false
@@ -26,6 +31,14 @@ const input_dict = Dict(
 
 WIDTH = 1000
 HEIGHT = 1000
+
+if isfile(SCORE_PATH)
+    rm(SCORE_PATH)
+end
+
+open(SCORE_PATH, "a") do f
+    write(f, "<GAME>         : <SCORE>\n")
+end
 
 """
 Checks for keyboard input.
@@ -73,23 +86,24 @@ function on_key_down(g::Game, k)
 end
 
 function save_training_data()
-    global states, labels
 
-    for (idx, state) in states
-        filename = joinpath(STATES_PATH, "G$idx.json")
-        open(filename, "w") do f
-            JSON.print(f, JSON.json(Dict("state" => state)))
-        end
-    end
+    suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
+    stateFile = "states_$suffix$json"
+    actionFile = "actions_$suffix$json"
 
-    for (idx, label) in labels
-        filename = joinpath(LABELS_PATH, "G$idx.json")
-        open(filename, "w") do f
-            JSON.print(f, JSON.json(Dict("action" => label)))
-        end
-    end
-    # Iterate over states[] and labels[]
-        # For each in array, touch and write to file
+    stateFileName = joinpath(STATES_PATH, stateFile)
+    actionFileName = joinpath(LABELS_PATH, actionFile)
+
+    training_data = Dict(
+        "stateFile" => stateFile,
+        "actionFile" => actionFile,
+        "stateFileName" => stateFileName,
+        "actionFileName" => actionFileName,
+        "states" => states,
+        "labels" => labels
+    )
+
+    push!(data_list, training_data)
 end
 
 """

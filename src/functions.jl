@@ -13,6 +13,8 @@ using Flux: onehotbatch, onecold
 using Flux.Data: DataLoader
 using Flux.Losses: logitcrossentropy
 
+
+
 # SHould be refactored
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 const STATES_PATH = joinpath(DATA_PATH, "states")
@@ -47,7 +49,15 @@ function model_demo(name::AbstractString)
 end
 
 function collect_data()
-    rungame("src/collect_data.jl")
+    t2 = Threads.@spawn process_data()
+    t1 = Threads.@spawn rungame("src/collect_data.jl")
+    wait(t1)
+    set_game()
+    wait(t2)
+end
+
+function get_data()
+    download_data()
 end
 
 """
