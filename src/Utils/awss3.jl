@@ -4,6 +4,7 @@ using AWS: @service
 @service S3
 
 const BUCKET_NAME = "tetris-ai"
+const SCOREBOARD = "scoreboard"
 
 global game_over = false
 global data_list = []
@@ -25,11 +26,12 @@ function upload_data()
 
     for data in data_list
         arr = []
-        bucketname = "tetris-ai"
 
         #TODO: not working with profile. Not sure why??
         #AWSCredentials(profile="tetris")
 
+        suffix = data["suffix"]
+        score = data["score"]
         stateFile = data["stateFile"]
         actionFile = data["actionFile"]
         stateFileName = data["stateFileName"]
@@ -59,8 +61,17 @@ function upload_data()
                 "Content-Type" => "application/json"))
             JSON.print(f, arr)
         end
+        scoreboard_append(suffix, score)
     end
     empty!(data_list)
+end
+
+function scoreboard_append(name, score)
+    content = S3.get_object(BUCKET_NAME, SCOREBOARD, Dict("response-content-type" => "text/plain"))
+    new_score = "$content\n$name : $score"
+    S3.put_object(BUCKET_NAME, SCOREBOARD, Dict(
+        "body" => new_score,
+        "Content-Type" => "text/plain"))
 end
 
 function download_data()    
