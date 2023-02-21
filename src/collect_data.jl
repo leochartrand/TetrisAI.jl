@@ -8,7 +8,6 @@ import TetrisAI: game_over, set_game, data_list
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 const STATES_PATH = joinpath(DATA_PATH, "states")
 const LABELS_PATH = joinpath(DATA_PATH, "labels")
-const SCORE_PATH = joinpath(DATA_PATH, "scoreboard")
 const json = ".json"
 
 global game = TetrisGame()
@@ -31,14 +30,6 @@ const input_dict = Dict(
 
 WIDTH = 1000
 HEIGHT = 1000
-
-if isfile(SCORE_PATH)
-    rm(SCORE_PATH)
-end
-
-open(SCORE_PATH, "a") do f
-    write(f, "<GAME>         : <SCORE>\n")
-end
 
 """
 Checks for keyboard input.
@@ -95,6 +86,8 @@ function save_training_data()
     actionFileName = joinpath(LABELS_PATH, actionFile)
 
     training_data = Dict(
+        "suffix" => suffix,
+        "score" => game.score,
         "stateFile" => stateFile,
         "actionFile" => actionFile,
         "stateFileName" => stateFileName,
