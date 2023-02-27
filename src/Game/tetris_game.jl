@@ -122,6 +122,10 @@ function tick!(game::AbstractGame)
     return reward, game.is_over, game.score
 end
 
+"""
+Returns the game's raw state as a feature vector of size <258>. 
+Flattened game grid and other game info.
+"""
 function get_state(game::AbstractGame)
 
     # Empty state before construction

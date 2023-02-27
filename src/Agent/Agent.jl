@@ -13,10 +13,12 @@ export TetrisAgent,
     train!,
     CircularBufferMemory,
     get_action,
-    train_memory
+    train_memory,
+    get_state_features
 
 include("memory.jl")
 include("agents.jl")
 include("functions.jl")
+include("extract_features.jl")
 
 end # module

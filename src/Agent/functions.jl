@@ -8,9 +8,18 @@ else
     device = cpu
 end
 
+function get_state(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
+    state = TetrisAI.Game.get_state(game)
+    # agent.feature_extraction not implemented
+    # if agent.feature_extraction
+    #     state = get_state_features(state, game.active_piece.row, game.active_piece.col)
+    # end
+    return state
+end
+
 function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
     # Get the current step
-    old_state = TetrisAI.Game.get_state(game)
+    old_state = get_state(agent, game)
 
     # Get the predicted move for the state
     move = get_action(agent, old_state)
@@ -18,7 +27,7 @@ function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
 
     # Play the step
     reward, done, score = TetrisAI.Game.tick!(game)
-    new_state = TetrisAI.Game.get_state(game)
+    new_state = TetrisAI.Game.get_game_state(game)
 
     # Train the short memory
     train_short_memory(agent, old_state, move, reward, new_state, done)
@@ -124,8 +133,8 @@ function update!(
     end
 
     # Batching the states and converting data to Float32 (done implicitly otherwise)
-    state = Flux.batch(state) |> x -> convert.(Float32, x) |> gpu
-    next_state = Flux.batch(next_state) |> x -> convert.(Float32, x) |> gpu
+    state = Flux.batch(state) |> x -> convert.(Float32, x) |> device
+    next_state = Flux.batch(next_state) |> x -> convert.(Float32, x) |> device
     action = Flux.batch(action) |> x -> convert.(Float32, x)
     reward = Flux.batch(reward) |> x -> convert.(Float32, x)
     done = Flux.batch(done)
