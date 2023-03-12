@@ -8,17 +8,42 @@ else
     device = cpu
 end
 
-function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
+function get_state(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
+    state = TetrisAI.Game.get_state(game)
+    # agent.feature_extraction not implemented
+    # if agent.feature_extraction
+    #     state = get_state_features(state, game.active_piece.row, game.active_piece.col)
+    # end
+    return state
+end
+
+function train!(
+    agent::AbstractAgent,
+    game::TetrisAI.Game.AbstractGame,
+    reward_cte::Float16,
+    reward_last_score::Integer,
+    do_shape::Bool = false
+)
+
     # Get the current step
-    old_state = TetrisAI.Game.get_state(game)
+    old_state = get_state(agent, game)
 
     # Get the predicted move for the state
     move = get_action(agent, old_state)
     TetrisAI.send_input!(game, move)
 
     # Play the step
-    reward, done, score = TetrisAI.Game.tick!(game)
-    new_state = TetrisAI.Game.get_state(game)
+    lines, done, score = TetrisAI.Game.tick!(game)
+    new_state = TetrisAI.Game.get_game_state(game)
+
+    # Adjust reward accoring to amount of lines cleared
+    if do_shape
+        reward, reward_last_score, reward_cte = shape_rewards(game, lines, reward_last_score, reward_cte)
+    else
+        if lines != 0
+            reward = [1, 5, 10, 50][lines]
+        end
+    end
 
     # Train the short memory
     train_short_memory(agent, old_state, move, reward, new_state, done)
@@ -38,6 +63,93 @@ function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
     end
 
     return done, score
+end
+
+function shape_rewards(
+    game::TetrisAI.Game.AbstractGame,
+    lines::Integer,
+    last_score::Integer,
+    cte::Float16
+)
+    reward = 0
+
+
+    if lines != 0
+        cte += 0.1
+    end
+    # Exploration to use an intermediate fitness function for early stages
+    # Ref: http://cs231n.stanford.edu/reports/2016/pdfs/121_Report.pdf
+    # As we score more and more lines, we change the scoring more and more to the
+    # game's score instead of the intermediate rewards that are used only for the
+    # early stages.
+    reward += Int(round(((1 - cte) * computeIntermediateReward!(game, last_score, lines)) + (cte * (lines ^ 2))))
+
+
+    return reward, last_score, cte
+end
+
+function computeIntermediateReward!(game::AbstractGame, last_score::Integer, lines::Int)
+    height_cte = -0.510066
+    lines_cte = 0.760666
+    holes_cte = -0.35663
+    bumpiness_cte = -0.184483
+
+    height, bumps, holes = fitnessStats(game)
+
+    print("height: ", height, " bumps: ", bumps, " holes: ", holes, " lines: ", lines, "\n")
+
+    score = (height_cte * height) + (lines_cte * lines) + (holes_cte * holes) + (bumpiness_cte * bumps)
+    reward = score - last_score
+    last_score = Int(round(score))
+    return reward
+end
+
+function fitnessStats(game::AbstractGame)
+    board_state = get_state(game.grid, game.active_piece)
+    rows = game.grid.rows
+    cols = game.grid.cols
+    heights = Int[]
+    holes = 0
+
+    # We parse the grid each column from top to the first occupied cell.
+    # At the first occupied cell, we compute the height of that column.
+
+    for c in 1:cols
+        found_first = false
+
+        for r in 1:rows
+            cell = board_state[r, c]
+
+            if cell == 1 # Cell is occupied
+                if !found_first 
+                    push!(heights, (rows - r + 1))
+                end
+                found_first = true
+            elseif cell == 0 # Cell is not occupied
+                if found_first
+                    holes += 1
+                end
+            end
+
+            if r == rows && cell == 0 && !found_first # If the column is empty
+                push!(heights, 0)
+            end
+        end
+    end
+
+    return mean(heights), computeBumpiness(heights), holes
+end
+
+function computeBumpiness(heights::AbstractArray)
+    bumpiness = 0
+    nb_cols = size(heights, 1)
+    for i in 1:nb_cols
+        if i != nb_cols
+            bumpiness += abs(heights[i] - heights[i + 1])
+        end
+    end
+
+    return bumpiness
 end
 
 function train_memory(
@@ -124,8 +236,8 @@ function update!(
     end
 
     # Batching the states and converting data to Float32 (done implicitly otherwise)
-    state = Flux.batch(state) |> x -> convert.(Float32, x) |> gpu
-    next_state = Flux.batch(next_state) |> x -> convert.(Float32, x) |> gpu
+    state = Flux.batch(state) |> x -> convert.(Float32, x) |> device
+    next_state = Flux.batch(next_state) |> x -> convert.(Float32, x) |> device
     action = Flux.batch(action) |> x -> convert.(Float32, x)
     reward = Flux.batch(reward) |> x -> convert.(Float32, x)
     done = Flux.batch(done)

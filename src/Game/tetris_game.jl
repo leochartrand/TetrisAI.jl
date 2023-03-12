@@ -20,7 +20,6 @@ Base.@kwdef mutable struct TetrisGame{T<:Integer} <: AbstractGame
     hard_dropped::Bool = false
     gravity::T = 48
     gravitySteps::T = 0
-    last_score::T = 0
 end
 
 global gravityDict = Dict([(0, 48), (1,43), (2,38), (3,33), (4,28), (5,23), (6,18), (7,13), (8,8), (9,6), (10,5), (11,5), (12,5), (13,4), (14,4), (15,4), (16,3), (17,3), (18,3), (19,2), (20,2), (21,2), (22,2), (23,2), (24,2), (25,2), (26,2), (27,2), (28,2), (29,1)])
@@ -86,11 +85,8 @@ end
 Advance the game state by one state.
 """
 function tick!(game::AbstractGame)
-
-    reward = 0
     game.steps +=1
     game.gravitySteps += 1
-    cte = 0 # 1 means we only reward based on the lines cleared
 
     if is_collision(game.grid, game.active_piece)
         
@@ -111,16 +107,6 @@ function tick!(game::AbstractGame)
         # Check if we have cleared lines only when piece is dropped
         lines = check_for_lines!(game)
 
-        if lines != 0
-            cte += 0.1
-        end
-        # Exploration to use an intermediate fitness function for early stages
-        # Ref: http://cs231n.stanford.edu/reports/2016/pdfs/121_Report.pdf
-        # As we score more and more lines, we change the scoring more and more to the
-        # game's score instead of the intermediate rewards that are used only for the
-        # early stages.
-        reward += Int(round(((1 - cte) * computeIntermediateReward!(game, lines)) + (cte * (lines ^ 2))))
-
     elseif game.gravitySteps >= game.gravity
         game.gravitySteps = 0
         clear_piece_cells!(game.grid, game.active_piece)
@@ -129,71 +115,7 @@ function tick!(game::AbstractGame)
         put_piece!(game.grid, game.active_piece)
     end
 
-    return reward, game.is_over, game.score
-end
-
-function computeIntermediateReward!(game::AbstractGame, lines::Int)
-    height_cte = -0.510066
-    lines_cte = 0.760666
-    holes_cte = -0.35663
-    bumpiness_cte = -0.184483
-
-    height, bumps, holes = fitnessStats(game)
-
-    print("height: ", height, " bumps: ", bumps, " holes: ", holes, " lines: ", lines, "\n")
-
-    score = (height_cte * height) + (lines_cte * lines) + (holes_cte * holes) + (bumpiness_cte * bumps)
-    reward = score - game.last_score
-    game.last_score = Int(round(score))
-    return reward
-end
-
-function fitnessStats(game::AbstractGame)
-    board_state = get_state(game.grid, game.active_piece)
-    rows = game.grid.rows
-    cols = game.grid.cols
-    heights = Int[]
-    holes = 0
-
-    # We parse the grid each column from top to the first occupied cell.
-    # At the first occupied cell, we compute the height of that column.
-
-    for c in 1:cols
-        found_first = false
-
-        for r in 1:rows
-            cell = board_state[r, c]
-
-            if cell == 1 # Cell is occupied
-                if !found_first 
-                    push!(heights, (rows - r + 1))
-                end
-                found_first = true
-            elseif cell == 0 # Cell is not occupied
-                if found_first
-                    holes += 1
-                end
-            end
-
-            if r == rows && cell == 0 && !found_first # If the column is empty
-                push!(heights, 0)
-            end
-        end
-    end
-
-    return mean(heights), computeBumpiness(heights), holes
-end
-
-function computeBumpiness(heights::AbstractArray)
-    bumpiness = 0
-    nb_cols = size(heights, 1)
-    for i in 1:nb_cols
-        if i != nb_cols
-            bumpiness += abs(heights[i] - heights[i + 1])
-        end
-    end
-
-    return bumpiness
+    return lines, game.is_over, game.score
 end
 
 function get_state(game::AbstractGame)
