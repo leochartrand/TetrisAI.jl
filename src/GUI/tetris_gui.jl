@@ -3,6 +3,7 @@ abstract type AbstractUI end
 Base.@kwdef mutable struct TetrisUI <: AbstractUI
     # Sprites
     background::Actor = Actor("bg.png")
+    splash::Actor = Actor("splash.png")
     pause_overlay::Actor = Actor("pause.png")
     gameover_overlay::Actor = Actor("gameover.png")
     I::Actor = Actor("i.png")
@@ -22,9 +23,18 @@ Base.@kwdef mutable struct TetrisUI <: AbstractUI
     # Dicts
     tetrominoesDict::Dict{Int, Union{Int, Actor}} = Dict([(0, 0), (1, I), (2, J), (3, L), (4, O), (5, S), (6, T), (7, Z)])
     previewsDict::Dict{Int, Union{Int, Actor}} = Dict([(0, 0), (1, I_preview), (2, J_preview), (3, L_preview), (4, O_preview), (5, S_preview), (6, T_preview), (7, Z_preview)])
+    # Show splash screen on first frame
+    is_first_frame::Bool = true
 end
 
 function drawUI(GUI::TetrisUI, game::TetrisAI.Game.AbstractGame, Paused::Bool)
+
+    if GUI.is_first_frame
+        GameZero.draw(GUI.splash)
+        GUI.is_first_frame = false
+        return
+    end
+
     GameZero.draw(GUI.background)
 
     # Draw the game board on screen
