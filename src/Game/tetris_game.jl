@@ -107,11 +107,7 @@ function tick!(game::AbstractGame)
 
         # Check if we have cleared lines only when piece is dropped
         lines = check_for_lines!(game)
-        
-        # Adjust reward accoring to amount of lines cleared
-        if lines != 0
-            reward = [1, 5, 10, 50][lines]
-        end
+
     elseif game.gravitySteps >= game.gravity
         game.gravitySteps = 0
         clear_piece_cells!(game.grid, game.active_piece)
@@ -119,7 +115,7 @@ function tick!(game::AbstractGame)
         # Draws the new piece on the grid
         put_piece!(game.grid, game.active_piece)
     end
-    return reward, game.is_over, game.score
+    return lines, game.is_over, game.score
 end
 
 """

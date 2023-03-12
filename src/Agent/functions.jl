@@ -26,8 +26,14 @@ function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
     TetrisAI.send_input!(game, move)
 
     # Play the step
-    reward, done, score = TetrisAI.Game.tick!(game)
+    lines, done, score = TetrisAI.Game.tick!(game)
     new_state = TetrisAI.Game.get_game_state(game)
+
+    # Adjust reward accoring to amount of lines cleared
+    reward = 0
+    if lines != 0
+        reward = [1, 5, 10, 50][lines]
+    end
 
     # Train the short memory
     train_short_memory(agent, old_state, move, reward, new_state, done)
