@@ -176,7 +176,7 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
         score = 0
         nb_ticks = 0
         while !done
-            done, score = train!(agent, game, reward_cte, last_reward_score)
+            done, score = train!(agent, game, reward_cte, last_reward_score, do_shape)
             nb_ticks = nb_ticks + 1
         end
 
