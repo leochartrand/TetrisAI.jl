@@ -131,7 +131,11 @@ function update!(
     Flux.Optimise.update!(agent.opt, ps, gs)
 end
 
-function pretrain!(agent::SarsaAgent, lr::Float64 = 5e-4, batch_size::Int64 = 50, epochs::Int64 = 80)
+function pretrain!(
+    agent::SarsaAgent; 
+    lr::Float64 = 5e-4, 
+    batch_size::Int64 = 50, 
+    epochs::Int64 = 80)
 
     states = Int[]
     labels = Int[]
@@ -173,6 +177,8 @@ function pretrain!(agent::SarsaAgent, lr::Float64 = 5e-4, batch_size::Int64 = 50
 
     ps = Flux.params(agent.model) # model's trainable parameters
 
+    opt = Flux.ADAM(lr)
+
     iter = ProgressBar(1:epochs)
     set_description(iter, "Pre-training the model on $epochs epochs, with $n_files states:")
 
@@ -183,7 +189,7 @@ function pretrain!(agent::SarsaAgent, lr::Float64 = 5e-4, batch_size::Int64 = 50
                     agent.loss(ŷ, y)
                 end
 
-            Flux.Optimise.update!(agent.opt, ps, gs)
+            Flux.Optimise.update!(opt, ps, gs)
         end
     end
 
