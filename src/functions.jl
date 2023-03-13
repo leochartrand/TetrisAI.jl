@@ -12,7 +12,7 @@ using Flux
 using Flux: onehotbatch, onecold
 using Flux.Data: DataLoader
 using Flux.Losses: logitcrossentropy
-
+include("benchmark.jl")
 
 
 # SHould be refactored
@@ -148,6 +148,7 @@ function pretrain_agent(model_name::AbstractString; lr::Float64 = 5e-4, batch_si
 end
 
 function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
+    benchmark = CreateScoreBenchMark(N)
 
     # The following 3 definitions are specifically for the reward shaping functionnality.
     # Might need to move them somewhere else since they are related only to a specific agent.
@@ -155,7 +156,6 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
     reward_cte::Float16 = 0 # 1 means we only reward based on the lines cleared
     last_reward_score::Integer = 0
 
-    graph_steps = round(N / 10)
     update_rate::Int64 = 1
     if limit_updates
         update_rate = max(round(N * 0.05), 1)
@@ -165,38 +165,21 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
 
     # Creating the initial game
     game = TetrisGame()
-    scores = Int[]
-    ticks = Int[]
 
     iter = ProgressBar(1:N)
     set_description(iter, "Training the agent on $N games:")
 
-    for i in iter
+    for _ in iter
         done = false
         score = 0
         nb_ticks = 0
-        while !done
+        while !done 
             done, score = train!(agent, game, reward_cte, last_reward_score, do_shape)
             nb_ticks = nb_ticks + 1
         end
 
-        push!(scores, score)
-        push!(ticks, nb_ticks)
-
-        if (i % update_rate) == 0
-            plot(1:i,
-                [scores, ticks],
-                xlims=(0, N),
-                xticks=0:graph_steps:N,
-                ylims=(0, max(findmax(scores)[1], findmax(ticks)[1])),
-                title="Agent performance over $N games",
-                linecolor = [:orange :blue],
-                linewidth = 2,
-                label=["Scores" "Nombre de ticks"])
-            xlabel!("Itérations")
-            ylabel!("Score")
-            display(plot!(legend=:outerbottom, legendcolumns=2))
-        end
+        append_score_ticks!(benchmark, score, nb_ticks)
+        update_benchmark(benchmark, update_rate)
     end
 
 

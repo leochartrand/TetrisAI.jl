@@ -73,8 +73,7 @@ function shape_rewards(
 )
     reward = 0
 
-
-    if lines != 0
+    if lines > 0
         cte += 0.1
     end
     # Exploration to use an intermediate fitness function for early stages
