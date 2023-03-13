@@ -9,19 +9,15 @@ end
 """
 Small neural net consisting of 3 linear layers.
 """
-function linear_QNet(input_size::T, output_size::T) where {T<:Integer}
-    
-    let hidden_row_input = 756,
-        hidden_row_output = 64
+function dense_net(input_size::T, hidden_size_1::T = 756, hidden_size_2::T = 64, output_size::T) where {T<:Integer}
         
-        # Creating the model
-        model = Chain(
-            # Linear layers
-            Dense(input_size => hidden_row_input, relu),
-            Dense(hidden_row_input => hidden_row_output, relu),
-            Dense(hidden_row_output => output_size)
-        )
+    # Creating the model
+    model = Chain(
+        # Linear layers
+        Dense(input_size => hidden_size_1, relu),
+        Dense(hidden_size_1 => hidden_size_2, relu),
+        Dense(hidden_size_2 => output_size)
+    )
 
-        return model
-    end
+    return model
 end

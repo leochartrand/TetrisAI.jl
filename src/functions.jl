@@ -6,7 +6,7 @@ import Flux: gpu
 using JSON
 
 import TetrisAI: Game, MODELS_PATH
-import TetrisAI.Agent: AbstractAgent
+import TetrisAI.Agent: TetrisAgent
 
 using Flux
 using Flux: onehotbatch, onecold
@@ -104,7 +104,7 @@ function pretrain_agent(model_name::AbstractString; lr::Float64 = 5e-4, batch_si
     train_loader = DataLoader((train_states, train_labels), batchsize = batch_size, shuffle = true)
     test_loader = DataLoader((test_states, test_labels), batchsize = batch_size)
 
-    model = TetrisAI.Model.linear_QNet(258, 7)
+    model = TetrisAI.Model.dense_net(258, 7)
 
     loss = logitcrossentropy
 
@@ -147,13 +147,7 @@ function pretrain_agent(model_name::AbstractString; lr::Float64 = 5e-4, batch_si
 
 end
 
-function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
-
-    # The following 3 definitions are specifically for the reward shaping functionnality.
-    # Might need to move them somewhere else since they are related only to a specific agent.
-    do_shape::Bool = true # TODO: Move into Agent 
-    reward_cte::Float16 = 0 # 1 means we only reward based on the lines cleared
-    last_reward_score::Integer = 0
+function train_agent(agent::TetrisAgent; N::Int=100, limit_updates::Bool=true)
 
     graph_steps = round(N / 10)
     update_rate::Int64 = 1
@@ -176,7 +170,7 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
         score = 0
         nb_ticks = 0
         while !done
-            done, score = train!(agent, game, reward_cte, last_reward_score, do_shape)
+            done, score = train!(agent, game)
             nb_ticks = nb_ticks + 1
         end
 
@@ -203,18 +197,15 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
     @info "Agent high score after $N games => $(agent.record) pts"
 end
 
-function save_agent(name::AbstractString, agent::AbstractAgent)
-    
-    TetrisAI.Model.save_model(name, agent.model)
+function save_agent(agent::TetrisAgent, name::AbstractString)
 
-    return
+    save(agent,name)
 end
 
-function load_agent(name::AbstractString)
-    
-    agent = TetrisAgent()
+function load_agent(agent::TetrisAgent, name::AbstractString) 
+    # might have to use kwargs... to account for cases where agent has more than 1 model (i.e. policy gradients)
 
-    agent.model = TetrisAI.Model.load_model(name)
+    load!(agent, name)
 
     return agent
 end

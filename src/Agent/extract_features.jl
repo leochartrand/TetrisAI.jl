@@ -275,3 +275,18 @@ function computeIntermediateReward!(game_grid::Matrix{Int}, last_score::Integer,
     last_score = Int(round(score))
     return reward
 end
+
+function shape_rewards(game::TetrisAI.Game.AbstractGame, lines::Integer)
+
+    if lines != 0
+        agent.ω += 0.1
+    end
+    # Exploration to use an intermediate fitness function for early stages
+    # Ref: http://cs231n.stanford.edu/reports/2016/pdfs/121_Report.pdf
+    # As we score more and more lines, we change the scoring more and more to the
+    # game's score instead of the intermediate rewards that are used only for the
+    # early stages.
+    reward = Int(round(((1 - agent.ω) * computeIntermediateReward!(game.grid.cells, agent.current_score, lines)) + (agent.ω * (lines ^ 2))))
+
+    return reward
+end
