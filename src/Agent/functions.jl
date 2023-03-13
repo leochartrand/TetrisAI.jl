@@ -8,17 +8,42 @@ else
     device = cpu
 end
 
-function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
+function get_state(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
+    state = TetrisAI.Game.get_state(game)
+    # agent.feature_extraction not implemented
+    # if agent.feature_extraction
+    #     state = get_state_features(state, game.active_piece.row, game.active_piece.col)
+    # end
+    return state
+end
+
+function train!(
+    agent::AbstractAgent,
+    game::TetrisAI.Game.AbstractGame,
+    reward_cte::Float16,
+    reward_last_score::Integer,
+    do_shape::Bool = false
+)
+
     # Get the current step
-    old_state = TetrisAI.Game.get_state(game)
+    old_state = get_state(agent, game)
 
     # Get the predicted move for the state
     move = get_action(agent, old_state)
     TetrisAI.send_input!(game, move)
 
     # Play the step
-    reward, done, score = TetrisAI.Game.tick!(game)
-    new_state = TetrisAI.Game.get_state(game)
+    lines, done, score = TetrisAI.Game.tick!(game)
+    new_state = TetrisAI.Game.get_state(game) # NOTE: ici on avait get_game_state qui n'est pas défini nul part??
+
+    # Adjust reward accoring to amount of lines cleared
+    if do_shape
+        reward, reward_last_score, reward_cte = shape_rewards(game, lines, reward_last_score, reward_cte)
+    else
+        if lines != 0
+            reward = [1, 5, 10, 50][lines]
+        end
+    end
 
     # Train the short memory
     train_short_memory(agent, old_state, move, reward, new_state, done)
@@ -38,6 +63,29 @@ function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
     end
 
     return done, score
+end
+
+function shape_rewards(
+    game::TetrisAI.Game.AbstractGame,
+    lines::Integer,
+    last_score::Integer,
+    cte::Float16
+)
+    reward = 0
+
+
+    if lines != 0
+        cte += 0.1
+    end
+    # Exploration to use an intermediate fitness function for early stages
+    # Ref: http://cs231n.stanford.edu/reports/2016/pdfs/121_Report.pdf
+    # As we score more and more lines, we change the scoring more and more to the
+    # game's score instead of the intermediate rewards that are used only for the
+    # early stages.
+    reward += Int(round(((1 - cte) * computeIntermediateReward!(game.grid.cells, last_score, lines)) + (cte * (lines ^ 2))))
+
+
+    return reward, last_score, cte
 end
 
 function train_memory(
@@ -124,8 +172,8 @@ function update!(
     end
 
     # Batching the states and converting data to Float32 (done implicitly otherwise)
-    state = Flux.batch(state) |> x -> convert.(Float32, x) |> gpu
-    next_state = Flux.batch(next_state) |> x -> convert.(Float32, x) |> gpu
+    state = Flux.batch(state) |> x -> convert.(Float32, x) |> device
+    next_state = Flux.batch(next_state) |> x -> convert.(Float32, x) |> device
     action = Flux.batch(action) |> x -> convert.(Float32, x)
     reward = Flux.batch(reward) |> x -> convert.(Float32, x)
     done = Flux.batch(done)

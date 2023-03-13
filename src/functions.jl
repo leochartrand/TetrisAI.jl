@@ -149,6 +149,12 @@ end
 
 function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
 
+    # The following 3 definitions are specifically for the reward shaping functionnality.
+    # Might need to move them somewhere else since they are related only to a specific agent.
+    do_shape::Bool = true # TODO: Move into Agent 
+    reward_cte::Float16 = 0 # 1 means we only reward based on the lines cleared
+    last_reward_score::Integer = 0
+
     graph_steps = round(N / 10)
     update_rate::Int64 = 1
     if limit_updates
@@ -170,7 +176,7 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
         score = 0
         nb_ticks = 0
         while !done
-            done, score = train!(agent, game)
+            done, score = train!(agent, game, reward_cte, last_reward_score, do_shape)
             nb_ticks = nb_ticks + 1
         end
 
