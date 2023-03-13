@@ -5,7 +5,7 @@ Returns the vertical index of the topmost occupied cell for each column.
 """
 function get_column_heights(g::Matrix{Int})
     # Creates a copy of the grid
-    column_heights = zeros(Float64, 10)
+    column_heights = zeros(Int, 10)
     # Simplifies representation of occupied cells
     for j in 1:10
         for i in 1:20
@@ -37,6 +37,23 @@ function get_bumpiness(g::Matrix{Int})
     # Returns bumpiness value
     return value
 end
+
+"""
+Bumpiness value function.
+Same function as above, but taking in the array of the heights or each column.
+"""
+function get_bumpiness(heights::AbstractArray{Int})
+    bumpiness = 0
+    nb_cols = size(heights, 1)
+    for i in 1:nb_cols
+        if i != nb_cols
+            bumpiness += abs(heights[i] - heights[i + 1])
+        end
+    end
+
+    return bumpiness
+end
+
 
 """
 Check if a given cell (tuple of cell indexes) is positioned in the visible grid
@@ -233,4 +250,28 @@ function get_state_features(state::Vector{Int}, active_piece_row::Int, active_pi
     # print_grids(raw_grid,feature_grid)
 
     return features
+end
+
+"""
+Shaping the reward based on human developped heuristics to guide the agent to its first line completed.
+"""
+function computeIntermediateReward!(game_grid::Matrix{Int}, last_score::Integer, lines::Int)
+    height_cte = -0.510066
+    lines_cte = 0.760666
+    holes_cte = -0.35663
+    bumpiness_cte = -0.184483
+
+    feature_grid = get_feature_grid(game_grid) 
+
+    heights = get_column_heights(game_grid)
+    height_avg = mean(heights)
+    bumps = get_bumpiness(heights)
+    holes = get_n_holes(feature_grid)
+
+    print("height_avg: ", height_avg, " bumps: ", bumps, " holes: ", holes, " lines: ", lines, "\n")
+
+    score = (height_cte * height_avg) + (lines_cte * lines) + (holes_cte * holes) + (bumpiness_cte * bumps)
+    reward = score - last_score
+    last_score = Int(round(score))
+    return reward
 end

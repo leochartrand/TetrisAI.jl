@@ -87,7 +87,7 @@ Advance the game state by one state.
 function tick!(game::AbstractGame)
     game.steps +=1
     game.gravitySteps += 1
-
+    lines = 0
     if is_collision(game.grid, game.active_piece)
         
         # Check for game over collision at starting row
