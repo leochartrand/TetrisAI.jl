@@ -9,6 +9,11 @@ function get_action end
 function update! end
 
 
+Base.@kwdef mutable struct MDPAgent <: AbstractAgent 
+    n_games::Int = 0
+    record::Int = 0
+end
+
 Base.@kwdef mutable struct TetrisAgent <: AbstractAgent
     n_games::Int = 0
     record::Int = 0
