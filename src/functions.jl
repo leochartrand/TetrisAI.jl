@@ -8,13 +8,6 @@ using JSON
 import TetrisAI: Game, MODELS_PATH
 import TetrisAI.Agent: TetrisAgent
 
-using Flux
-using Flux: onehotbatch, onecold
-using Flux.Data: DataLoader
-using Flux.Losses: logitcrossentropy
-
-
-
 # SHould be refactored
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 const STATES_PATH = joinpath(DATA_PATH, "states")
@@ -66,10 +59,9 @@ Train model on generated training data
 function pretrain_agent(
     agent::TetrisAgent,
     lr::Float64 = 5e-4, 
-    reg::Float64 = 1e-2, 
     batch_size::Int64 = 50, 
     epochs::Int64 = 80)
-    pretrain!(agent,lr,batch_size,epochs)
+    clone_behavior!(agent,lr,batch_size,epochs)
 end
 
 function train_agent(agent::TetrisAgent; N::Int=100, limit_updates::Bool=true)

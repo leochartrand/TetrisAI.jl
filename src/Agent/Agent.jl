@@ -11,17 +11,20 @@ import Zygote: Buffer
 export TetrisAgent,
     RandomAgent,
     DQNAgent,
-    SarsaAgent,
+    SARSAAgent,
     train!,
     save,
     load!,
     CircularBufferMemory,
     get_action,
     get_state_features,
-    shape_rewards
+    shape_rewards,
+    clone_behavior!
+
 
 include("memory.jl")
 include("extract_features.jl")
+include("behavioral_cloning.jl")
 include("tetris_agent.jl")
 include("agents/dqn_agent.jl")
 include("agents/sarsa_agent.jl")

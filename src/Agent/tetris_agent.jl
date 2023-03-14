@@ -54,7 +54,7 @@ function train!(agent::TetrisAgent, game::TetrisAI.Game.AbstractGame)
     return done, score
 end
 
-function pretrain!(agent::TetrisAgent, lr::Float64 = 5e-4, batch_size::Int64 = 50, epochs::Int64 = 80) end
+function clone_behavior!(agent::TetrisAgent, lr::Float64 = 5e-4, batch_size::Int64 = 50, epochs::Int64 = 80) end
 
 function save(agent::TetrisAgent, name::AbstractString) end
 
