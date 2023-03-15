@@ -2,11 +2,11 @@ import GameZero: rungame
 using ProgressBars
 using CUDA 
 using Plots
-import Flux: gpu
+import Flux: gpu, cpu
 using JSON
 
 import TetrisAI: Game, MODELS_PATH
-import TetrisAI.Agent: TetrisAgent
+import TetrisAI.Agent: AbstractAgent
 
 # SHould be refactored
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
@@ -57,14 +57,14 @@ end
 Train model on generated training data
 """
 function pretrain_agent(
-    agent::TetrisAgent,
+    agent::AbstractAgent,
     lr::Float64 = 5e-4, 
     batch_size::Int64 = 50, 
     epochs::Int64 = 80)
     clone_behavior!(agent,lr,batch_size,epochs)
 end
 
-function train_agent(agent::TetrisAgent; N::Int=100, limit_updates::Bool=true)
+function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
 
     graph_steps = round(N / 10)
     update_rate::Int64 = 1
@@ -114,12 +114,12 @@ function train_agent(agent::TetrisAgent; N::Int=100, limit_updates::Bool=true)
     @info "Agent high score after $N games => $(agent.record) pts"
 end
 
-function save_agent(agent::TetrisAgent, name::AbstractString)
+function save_agent(agent::AbstractAgent, name::AbstractString)
 
     save(agent,name)
 end
 
-function load_agent(agent::TetrisAgent, name::AbstractString) 
+function load_agent(agent::AbstractAgent, name::AbstractString) 
     # might have to use kwargs... to account for cases where agent has more than 1 model (i.e. policy gradients)
 
     load!(agent, name)

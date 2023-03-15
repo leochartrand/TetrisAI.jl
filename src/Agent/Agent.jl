@@ -8,7 +8,7 @@ import CUDA
 import StatsBase: sample
 import Zygote: Buffer
 
-export TetrisAgent,
+export AbstractAgent,
     RandomAgent,
     DQNAgent,
     SARSAAgent,

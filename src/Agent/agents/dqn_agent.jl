@@ -11,23 +11,23 @@ else
     device = cpu
 end
 
-Base.@kwdef mutable struct DQNAgent <: TetrisAgent
+Base.@kwdef mutable struct DQNAgent <: AbstractAgent
     n_games::Int = 0
     record::Int = 0
     current_score::Int = 0
-    feature_extraction::Bool = False
-    reward_shaping::Bool = False
+    feature_extraction::Bool = false
+    reward_shaping::Bool = false
     ω::Float64 = 0              # Reward shaping constant
     η::Float64 = 1e-3           # Learning rate
     γ::Float64 = (1 - 1e-2)     # Discount factor
-    ϵ::Int = 1                  # Exploration
-    ϵ_decay::Int = 1
-    ϵ_min::Int = 0.05
+    ϵ::Float64 = 1              # Exploration
+    ϵ_decay::Float64 = 1
+    ϵ_min::Float64 = 0.05
     memory::AgentMemory = CircularBufferMemory()
     main_net = TetrisAI.Model.dense_net(228, 7)
     target_net = TetrisAI.Model.dense_net(228, 7)
     opt::Flux.Optimise.AbstractOptimiser = Flux.ADAM(η)
-    loss::Function = Flux.Losses.logitcrossentropy
+    loss::Function = logitcrossentropy
 end
 
 function get_action(agent::DQNAgent, state::AbstractArray{<:Integer}; rand_range=1:200, nb_outputs=7)
@@ -57,27 +57,28 @@ function train!(agent::DQNAgent, game::TetrisAI.Game.AbstractGame)
     end
 
     # Get the predicted move for the state
-    move = get_action(agent, old_state)
-    TetrisAI.send_input!(game, move)
+    action = get_action(agent, old_state)
+    TetrisAI.send_input!(game, action)
 
+    reward = 0
     # Play the step
     lines, done, score = TetrisAI.Game.tick!(game)
     new_state = TetrisAI.Game.get_state(game)
 
     # Adjust reward accoring to amount of lines cleared
-    if do_shape
+    if agent.reward_shaping
         reward = shape_rewards(game, lines)
     else
-        if lines != 0
+        if lines > 0
             reward = [1, 5, 10, 50][lines]
         end
     end
 
     # Train the short memory
-    train_short_memory(agent, old_state, move, reward, new_state, done)
+    train_short_memory(agent, old_state, action, reward, new_state, done)
 
     # Remember
-    remember(agent, old_state, move, reward, new_state, done)
+    remember(agent, old_state, action, reward, new_state, done)
 
     if done
         # Reset the game

@@ -24,7 +24,7 @@ export random_Net, load_model, save_model, pretrain_model
 
 include("Agent/Agent.jl")
 using .Agent
-export TetrisAgent, RandomAgent, get_action, train_memory
+export AbstractAgent, RandomAgent, DQNAgent, SARSAAgent, get_action, train_memory
 
 include("GUI/GUI.jl")
 using .GUI

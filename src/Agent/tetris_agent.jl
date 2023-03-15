@@ -1,27 +1,18 @@
 # AbstractAgent interface
 abstract type AbstractAgent end
 
-Base.@kwdef mutable struct TetrisAgent <: AbstractAgent
-    n_games::Int = 0
-    record::Int = 0
-    current_score::Int = 0
-    feature_extraction::Bool = False
-    reward_shaping::Bool = False
-    ω::Float64 = 0 # Reward constant
-end
-
-Base.@kwdef mutable struct RandomAgent <: TetrisAgent
+Base.@kwdef mutable struct RandomAgent <: AbstractAgent
     n_games::Int = 0
     record::Int = 0
     model = TetrisAI.Model.random_Net(7)
 end
 
-function Base.show(io::IO, agent::TetrisAgent)
+function Base.show(io::IO, agent::AbstractAgent)
     println("n_games => ", agent.n_games)
     println("record => ", agent.record)
 end
 
-function get_action(agent::TetrisAgent, nb_outputs=7)
+function get_action(agent::AbstractAgent, nb_outputs=7)
     final_move = zeros(Int, nb_outputs)
     move = rand(1:nb_outputs)
     final_move[move] = 1
@@ -29,7 +20,7 @@ function get_action(agent::TetrisAgent, nb_outputs=7)
     return final_move
 end
 
-function train!(agent::TetrisAgent, game::TetrisAI.Game.AbstractGame)
+function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
 
     # Get the current step
     old_state = TetrisAI.Game.get_state(game)
@@ -54,10 +45,10 @@ function train!(agent::TetrisAgent, game::TetrisAI.Game.AbstractGame)
     return done, score
 end
 
-function clone_behavior!(agent::TetrisAgent, lr::Float64 = 5e-4, batch_size::Int64 = 50, epochs::Int64 = 80) end
+function clone_behavior!(agent::AbstractAgent, lr::Float64 = 5e-4, batch_size::Int64 = 50, epochs::Int64 = 80) end
 
-function save(agent::TetrisAgent, name::AbstractString) end
+function save(agent::AbstractAgent, name::AbstractString) end
 
-function load!(agent::TetrisAgent, name::AbstractString)
+function load!(agent::AbstractAgent, name::AbstractString)
     return agent
 end

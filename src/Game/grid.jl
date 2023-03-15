@@ -51,7 +51,7 @@ function get_state(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
     # Creates a copy of the grid
     state = deepcopy(g.cells)
     # Simplifies representation of occupied cells
-    for i in 1:20, j in 1:10
+    for i in 1:23, j in 1:10
         if state[i,j] > 0
             state[i,j] = 1
         end
@@ -63,7 +63,7 @@ function get_state(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
         end
     end
     # Return visible grid
-    return state
+    return state[4:23,:]
 end
 
 """

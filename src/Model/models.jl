@@ -9,7 +9,7 @@ end
 """
 Small neural net consisting of 3 linear layers.
 """
-function dense_net(input_size::T, hidden_size_1::T = 756, hidden_size_2::T = 64, output_size::T) where {T<:Integer}
+function dense_net(input_size::T, output_size::T, hidden_size_1::T = 756, hidden_size_2::T = 64) where {T<:Integer}
         
     # Creating the model
     model = Chain(
