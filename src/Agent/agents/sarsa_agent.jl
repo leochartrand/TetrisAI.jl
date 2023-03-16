@@ -15,24 +15,23 @@ Base.@kwdef mutable struct SARSAAgent <: AbstractAgent
     n_games::Int = 0
     record::Int = 0
     current_score::Int = 0
-    feature_extraction::Bool = false
+    feature_extraction::Bool = true
     reward_shaping::Bool = false
     ω::Float64 = 0              # Reward shaping constant
     η::Float64 = 1e-3           # Learning rate
     γ::Float64 = (1 - 1e-2)     # Discount factor
     ϵ::Float64 = 1              # Exploration
-    ϵ_decay::Float64 = 1
-    ϵ_min::Float64 = 0.05
-    model = TetrisAI.Model.dense_net(228, 7) |> device
+    ϵ_decay::Float64 = 0.002
+    ϵ_min::Float64 = 0.005
+    model = TetrisAI.Model.dense_net(15, 7) |> device
     opt::Flux.Optimise.AbstractOptimiser = Flux.ADAM(η)
     loss::Function = logitcrossentropy
 end
 
-function get_action(agent::SARSAAgent, state::AbstractArray{<:Integer}; rand_range=1:200, nb_outputs=7)
-    agent.ϵ = 80 - agent.n_games
+function get_action(agent::SARSAAgent, state::AbstractArray{<:Real}, nb_outputs::Integer=7)
     final_move = zeros(Int, nb_outputs)
 
-    if rand(rand_range) < agent.ϵ
+    if rand() < agent.ϵ
         # Random move for exploration
         move = rand(1:nb_outputs)
         final_move[move] = 1
@@ -61,6 +60,9 @@ function train!(agent::SARSAAgent, game::TetrisAI.Game.AbstractGame)
     # Play the step
     lines, done, score = TetrisAI.Game.tick!(game)
     new_state = TetrisAI.Game.get_state(game)
+    if agent.feature_extraction
+        new_state = get_state_features(new_state, game.active_piece.row, game.active_piece.col)
+    end
 
     reward = 0
     # Adjust reward accoring to amount of lines cleared
@@ -74,6 +76,10 @@ function train!(agent::SARSAAgent, game::TetrisAI.Game.AbstractGame)
 
     # Update
     update!(agent, old_state, action, reward, new_state, done)
+
+    if agent.ϵ > agent.ϵ_min
+        agent.ϵ -= agent.ϵ_decay
+    end
 
     if done
         # Reset the game
@@ -96,7 +102,7 @@ function update!(
     next_state::Union{A,AA},
     done::Union{Bool,AA};
     α::Float32=0.9f0    # Step size
-) where {T<:Integer,A<:AbstractArray{<:T},AA<:AbstractArray{A}}
+) where {T<:Real,A<:AbstractArray{<:T},AA<:AbstractArray{A}}
 
     # Batching the states and converting data to Float32 (done implicitly otherwise)
     state = Flux.batch(state) |> x -> convert.(Float32, x) |> device
