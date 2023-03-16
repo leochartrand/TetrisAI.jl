@@ -21,9 +21,9 @@ Base.@kwdef mutable struct SARSAAgent <: AbstractAgent
     η::Float64 = 1e-3           # Learning rate
     γ::Float64 = (1 - 1e-2)     # Discount factor
     ϵ::Float64 = 1              # Exploration
-    ϵ_decay::Float64 = 0.002
+    ϵ_decay::Float64 = 0.001
     ϵ_min::Float64 = 0.005
-    model = TetrisAI.Model.dense_net(15, 7) |> device
+    model = TetrisAI.Model.dense_net(17, 7) |> device
     opt::Flux.Optimise.AbstractOptimiser = Flux.ADAM(η)
     loss::Function = logitcrossentropy
 end

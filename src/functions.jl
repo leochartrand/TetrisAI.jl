@@ -89,6 +89,9 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
         while !done
             done, score = train!(agent, game)
             nb_ticks = nb_ticks + 1
+            if nb_ticks > 20000
+                break
+            end
         end
 
         push!(scores, score)

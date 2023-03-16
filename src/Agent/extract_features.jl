@@ -246,6 +246,8 @@ function get_state_features(state::Vector{Int}, active_piece_row::Int, active_pi
     features = vcat(features,bumpiness)
     n_holes = get_n_holes(raw_grid)
     features = vcat(features,n_holes)
+    features = vcat(features,convert(Float64,active_piece_row))
+    features = vcat(features,convert(Float64,active_piece_col))
 
     # print_grids(raw_grid,feature_grid)
 
