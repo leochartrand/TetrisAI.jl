@@ -45,10 +45,23 @@ function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
     return done, score
 end
 
+function to_device!(agent::AbstractAgent) end
+
 function clone_behavior!(agent::AbstractAgent, lr::Float64 = 5e-4, batch_size::Int64 = 50, epochs::Int64 = 80) end
 
 function save(agent::AbstractAgent, name::AbstractString) end
 
-function load!(agent::AbstractAgent, name::AbstractString)
+function load(name::AbstractString)
+    
+    file = string(name, ".bson")
+
+    path = joinpath(MODELS_PATH, file)
+
+    if isfile(path)
+        agent = get(BSON.load(path, @__MODULE__), :agent, "Agent_not_found")
+    else
+        print("Agent not found.\n")
+    end
+
     return agent
 end

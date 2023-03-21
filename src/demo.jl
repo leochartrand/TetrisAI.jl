@@ -14,14 +14,14 @@ global game = TetrisGame()
 global Paused = false
 global GUI = TetrisUI()
 
-global model_name = ""
+global agent_name = ""
 
 open(joinpath(MODELS_PATH, "current_model"), "r") do file
-    global model_name = readline(file)
+    global agent_name = readline(file)
 end
 
-global agent = load_agent(model_name)
-agent.model = agent.model |> device
+global agent = load(model_name)
+to_device!(agent)
 
 WIDTH = 1000
 HEIGHT = 1000

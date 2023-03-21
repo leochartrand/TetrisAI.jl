@@ -7,6 +7,7 @@ import Flux
 import CUDA
 import StatsBase: sample
 import Zygote: Buffer
+import ..TetrisAI: MODELS_PATH
 
 export AbstractAgent,
     RandomAgent,
@@ -19,7 +20,8 @@ export AbstractAgent,
     get_action,
     get_state_features,
     shape_rewards,
-    clone_behavior!
+    clone_behavior!,
+    to_device!
 
 
 include("memory.jl")

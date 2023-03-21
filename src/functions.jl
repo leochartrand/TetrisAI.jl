@@ -72,7 +72,7 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
         update_rate = max(round(N * 0.05), 1)
     end
 
-    agent.model = agent.model |> device
+   to_device!(agent)
 
     # Creating the initial game
     game = TetrisGame()
