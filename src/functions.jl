@@ -117,15 +117,19 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
     @info "Agent high score after $N games => $(agent.record) pts"
 end
 
-function save_agent(agent::AbstractAgent, name::AbstractString)
+function save_agent(agent::AbstractAgent, name::AbstractString=nothing)
+
+    if isfile(joinpath(MODELS_PATH, "$name.bson"))
+        @error "file named $name.bson already exists."
+        return
+    end
 
     save(agent,name)
 end
 
-function load_agent(agent::AbstractAgent, name::AbstractString) 
-    # might have to use kwargs... to account for cases where agent has more than 1 model (i.e. policy gradients)
+function load_agent(name::AbstractString) 
 
-    load!(agent, name)
+    agent = load(name)
 
     return agent
 end

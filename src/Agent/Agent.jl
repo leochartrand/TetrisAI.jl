@@ -15,7 +15,7 @@ export AbstractAgent,
     SARSAAgent,
     train!,
     save,
-    load!,
+    load,
     CircularBufferMemory,
     get_action,
     get_state_features,
@@ -26,7 +26,6 @@ export AbstractAgent,
 
 include("memory.jl")
 include("extract_features.jl")
-include("behavioral_cloning.jl")
 include("tetris_agent.jl")
 include("agents/dqn_agent.jl")
 include("agents/sarsa_agent.jl")

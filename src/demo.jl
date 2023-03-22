@@ -20,7 +20,7 @@ open(joinpath(MODELS_PATH, "current_model"), "r") do file
     global agent_name = readline(file)
 end
 
-global agent = load(model_name)
+global agent = load_agent(agent_name)
 to_device!(agent)
 
 WIDTH = 1000

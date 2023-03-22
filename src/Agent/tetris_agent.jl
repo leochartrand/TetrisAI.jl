@@ -1,7 +1,10 @@
+using BSON, NNlib, Dates
+
 # AbstractAgent interface
 abstract type AbstractAgent end
 
 Base.@kwdef mutable struct RandomAgent <: AbstractAgent
+    type::String = "RANDOM"
     n_games::Int = 0
     record::Int = 0
     model = TetrisAI.Model.random_Net(7)
@@ -49,7 +52,28 @@ function to_device!(agent::AbstractAgent) end
 
 function clone_behavior!(agent::AbstractAgent, lr::Float64 = 5e-4, batch_size::Int64 = 50, epochs::Int64 = 80) end
 
-function save(agent::AbstractAgent, name::AbstractString) end
+
+# Util functions
+
+"""
+
+"""
+function save(agent::AbstractAgent, name::AbstractString=nothing)
+
+    if isnothing(name)
+        prefix = agent.type
+        suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
+        name = "$prefix-$suffix"
+    end
+
+    file = string(name, ".bson")
+
+    path = joinpath(MODELS_PATH, file)
+    
+    BSON.@save path agent
+    
+    return
+end
 
 function load(name::AbstractString)
     

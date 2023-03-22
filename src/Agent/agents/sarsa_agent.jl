@@ -16,7 +16,9 @@ else
     device = cpu
 end
 
+#TODO: fix gamma and alpha
 Base.@kwdef mutable struct SARSAAgent <: AbstractAgent 
+    type::String = "SARSA"
     n_games::Int = 0
     record::Int = 0
     current_score::Int = 0
@@ -153,10 +155,6 @@ function update!(
     Flux.Optimise.update!(agent.opt, ps, gs)
 end
 
-function to_device!(agent::SARSAAgent) 
-    agent.model = agent.model |> device
-end
-
 """
 Clones behavior from expert data to policy neural net
 """
@@ -243,18 +241,6 @@ function clone_behavior!(
     return agent
 end
 
-function save(agent::SARSAAgent, name::AbstractString=nothing) 
-
-    if isnothing(name)
-        suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
-        name = "SARSA_$suffix"
-    end
-
-    file = string(name, ".bson")
-
-    path = joinpath(MODELS_PATH, file)
-    
-    BSON.@save path agent
-    
-    return
+function to_device!(agent::SARSAAgent) 
+    agent.model = agent.model |> device
 end
