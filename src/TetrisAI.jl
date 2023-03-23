@@ -16,15 +16,15 @@ export I_PIECE, J_PIECE, L_PIECE, O_PIECE, S_PIECE, T_PIECE, Z_PIECE
 
 include("Game/Game.jl")
 using .Game
-export TetrisGame, send_input!, tick!, reset!, get_preview_pieces, get_state, convert_input_to_vector
+export TetrisGame, send_input!, tick!, reset!, get_preview_pieces, get_state
 
 include("Model/Model.jl")
 using .Model
-export random_Net, load_model, save_model, pretrain_model
+export random_Net, load_model, save_model
 
 include("Agent/Agent.jl")
 using .Agent
-export TetrisAgent, RandomAgent, get_action, train_memory
+export AbstractAgent, RandomAgent, to_device!, DQNAgent, SARSAAgent
 
 include("GUI/GUI.jl")
 using .GUI
