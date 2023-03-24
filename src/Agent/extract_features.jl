@@ -112,6 +112,22 @@ function get_n_holes(feature_grid::Matrix{Int})
 end
 
 """
+Util function to obtain active position from the game grid if it's not provided.
+Useful for Imitation learning. 
+Finds the first cell from top left that is occupied by the active piece
+"""
+function get_active_piece_pos(raw_grid::Matrix{Int})
+    for i in 1:20, j in 1:10
+        if raw_grid[i,j] == 2 
+            return i,j
+        end
+    end
+
+    # If the active piece is not in the visible grid, return top-center cell
+    return 1,5
+end
+
+"""
 Returns a grid that highlights the features of every cell
 Features:
     0 = Empty;
@@ -198,7 +214,7 @@ end
 
 """
 Util function to print raw grid and feature grid side by side.
-For feature engineering development.
+For feature engineering development and debugging.
 """
 function print_grids(raw_grid,feature_grid)
     println("--------RAW GRID------------FEATURE GRID-----")
@@ -250,6 +266,19 @@ function get_state_features(state::Vector{Int}, active_piece_row::Int, active_pi
     features = vcat(features,convert(Float64,active_piece_col))
 
     # print_grids(raw_grid,feature_grid)
+
+    return features
+end
+
+"""
+Extracts features from the game state. 
+Placeholder function to be used when active piece position is not provided.
+"""
+function get_state_features(state::Vector{Int})
+
+    active_piece_row, active_piece_col = get_active_piece_pos(permutedims(reshape(state[29:228], (10,20)),(2,1)))
+
+    features = get_state_features(state, active_piece_row, active_piece_col)
 
     return features
 end
