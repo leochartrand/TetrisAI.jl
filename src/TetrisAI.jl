@@ -2,7 +2,7 @@ module TetrisAI
     
 using GameZero
 
-export play_tetris, model_demo, collect_data, train_agent, save_agent, load_agent, download_data
+export play_tetris, model_demo, collect_data, pretrain_agent, train_agent, save_agent, load_agent, download_data
 
 const PROJECT_ROOT = pkgdir(@__MODULE__)
 
