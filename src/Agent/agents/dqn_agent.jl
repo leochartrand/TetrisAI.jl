@@ -1,5 +1,7 @@
 using CUDA
-import Flux: gpu, cpu
+using Flux: gpu, cpu
+using Flux: onehotbatch, onecold
+using Flux.Losses: logitcrossentropy
 
 if CUDA.functional()
     CUDA.allowscalar(false)
@@ -8,137 +10,29 @@ else
     device = cpu
 end
 
-function get_state(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
-    state = TetrisAI.Game.get_state(game)
-    # agent.feature_extraction not implemented
-    # if agent.feature_extraction
-    #     state = get_state_features(state, game.active_piece.row, game.active_piece.col)
-    # end
-    return state
+#TODO: fix gamma and alpha
+Base.@kwdef mutable struct DQNAgent <: AbstractAgent
+    type::String = "SARSA"
+    n_games::Int = 0
+    record::Int = 0
+    current_score::Int = 0
+    feature_extraction::Bool = false
+    n_features::Int = 17
+    reward_shaping::Bool = false
+    ω::Float64 = 0              # Reward shaping constant
+    η::Float64 = 1e-3           # Learning rate
+    γ::Float64 = (1 - 1e-2)     # Discount factor
+    ϵ::Float64 = 1              # Exploration
+    ϵ_decay::Float64 = 1
+    ϵ_min::Float64 = 0.05
+    memory::AgentMemory = CircularBufferMemory()
+    main_net = (feature_extraction ? TetrisAI.Model.dense_net(n_features, 7) : TetrisAI.Model.dense_net(228, 7)) |> device
+    target_net = (feature_extraction ? TetrisAI.Model.dense_net(n_features, 7) : TetrisAI.Model.dense_net(228, 7)) |> device
+    opt::Flux.Optimise.AbstractOptimiser = Flux.ADAM(η)
+    loss::Function = logitcrossentropy
 end
 
-function train!(
-    agent::AbstractAgent,
-    game::TetrisAI.Game.AbstractGame,
-    reward_cte::Float16,
-    reward_last_score::Integer,
-    do_shape::Bool = false
-)
-
-    # Get the current step
-    old_state = get_state(agent, game)
-
-    # Get the predicted move for the state
-    move = get_action(agent, old_state)
-    TetrisAI.send_input!(game, move)
-
-    # Play the step
-    lines, done, score = TetrisAI.Game.tick!(game)
-    new_state = TetrisAI.Game.get_state(game) # NOTE: ici on avait get_game_state qui n'est pas défini nul part??
-
-    # Adjust reward accoring to amount of lines cleared
-    if do_shape
-        reward, reward_last_score, reward_cte = shape_rewards(game, lines, reward_last_score, reward_cte)
-    else
-        if lines != 0
-            reward = [1, 5, 10, 50][lines]
-        end
-    end
-
-    # Train the short memory
-    train_short_memory(agent, old_state, move, reward, new_state, done)
-
-    # Remember
-    remember(agent, old_state, move, reward, new_state, done)
-
-    if done
-        # Reset the game
-        train_long_memory(agent)
-        TetrisAI.Game.reset!(game)
-        agent.n_games += 1
-
-        if score > agent.record
-            agent.record = score
-        end
-    end
-
-    return done, score
-end
-
-function shape_rewards(
-    game::TetrisAI.Game.AbstractGame,
-    lines::Integer,
-    last_score::Integer,
-    cte::Float16
-)
-    reward = 0
-
-    if lines > 0
-        cte += 0.1
-    end
-    # Exploration to use an intermediate fitness function for early stages
-    # Ref: http://cs231n.stanford.edu/reports/2016/pdfs/121_Report.pdf
-    # As we score more and more lines, we change the scoring more and more to the
-    # game's score instead of the intermediate rewards that are used only for the
-    # early stages.
-    reward += Int(round(((1 - cte) * computeIntermediateReward!(game.grid.cells, last_score, lines)) + (cte * (lines ^ 2))))
-
-
-    return reward, last_score, cte
-end
-
-function train_memory(
-    agent::TetrisAgent,
-    old_state::S,
-    move::S,
-    reward::T,
-    new_state::S,
-    done::Bool
-) where {T<:Integer,S<:AbstractArray{<:T}}
-    # Train the short memory
-    train_short_memory(agent, old_state, move, reward, new_state, done)
-    # Remember
-    remember(agent, old_state, move, reward, new_state, done)
-    if done
-        train_long_memory(agent)
-    end
-end
-
-function remember(
-    agent::TetrisAgent,
-    state::S,
-    action::S,
-    reward::T,
-    next_state::S,
-    done::Bool
-) where {T<:Integer,S<:AbstractArray{<:T}}
-    push!(agent.memory.data, (state, action, [reward], next_state, convert.(Int, [done])))
-end
-
-function train_short_memory(
-    agent::TetrisAgent,
-    state::S,
-    action::S,
-    reward::T,
-    next_state::S,
-    done::Bool
-) where {T<:Integer,S<:AbstractArray{<:T}}
-    update!(agent, state, action, reward, next_state, done)
-end
-
-function train_long_memory(agent::TetrisAgent)
-    if length(agent.memory.data) > BATCH_SIZE
-        mini_sample = sample(agent.memory.data, BATCH_SIZE)
-    else
-        mini_sample = agent.memory.data
-    end
-
-    states, actions, rewards, next_states, dones = map(x -> getfield.(mini_sample, x), fieldnames(eltype(mini_sample)))
-
-    update!(agent, states, actions, rewards, next_states, dones)
-end
-
-function get_action(agent::AbstractAgent, state::AbstractArray{<:Integer}; rand_range=1:200, nb_outputs=7)
+function get_action(agent::DQNAgent, state::AbstractArray{<:Integer}; rand_range=1:200, nb_outputs=7)
     agent.ϵ = 80 - agent.n_games
     final_move = zeros(Int, nb_outputs)
 
@@ -156,8 +50,105 @@ function get_action(agent::AbstractAgent, state::AbstractArray{<:Integer}; rand_
     return final_move
 end
 
+function train!(agent::DQNAgent, game::TetrisAI.Game.AbstractGame)
+
+    # Get the current step
+    old_state = TetrisAI.Game.get_state(game)
+    if agent.feature_extraction
+        old_state = get_state_features(old_state, game.active_piece.row, game.active_piece.col)
+    end
+
+    # Get the predicted move for the state
+    action = get_action(agent, old_state)
+    TetrisAI.send_input!(game, action)
+
+    reward = 0
+    # Play the step
+    lines, done, score = TetrisAI.Game.tick!(game)
+    new_state = TetrisAI.Game.get_state(game)
+
+    # Adjust reward accoring to amount of lines cleared
+    if agent.reward_shaping
+        reward = shape_rewards(game, lines)
+    else
+        if lines > 0
+            reward = [1, 5, 10, 50][lines]
+        end
+    end
+
+    # Train the short memory
+    train_short_memory(agent, old_state, action, reward, new_state, done)
+
+    # Remember
+    remember(agent, old_state, action, reward, new_state, done)
+
+    if done
+        # Reset the game
+        train_long_memory(agent)
+        TetrisAI.Game.reset!(game)
+        agent.n_games += 1
+
+        if score > agent.record
+            agent.record = score
+        end
+    end
+
+    return done, score
+end
+
+function train_memory(
+    agent::DQNAgent,
+    old_state::S,
+    move::S,
+    reward::T,
+    new_state::S,
+    done::Bool
+) where {T<:Integer,S<:AbstractArray{<:T}}
+    # Train the short memory
+    train_short_memory(agent, old_state, move, reward, new_state, done)
+    # Remember
+    remember(agent, old_state, move, reward, new_state, done)
+    if done
+        train_long_memory(agent)
+    end
+end
+
+function remember(
+    agent::DQNAgent,
+    state::S,
+    action::S,
+    reward::T,
+    next_state::S,
+    done::Bool
+) where {T<:Integer,S<:AbstractArray{<:T}}
+    push!(agent.memory.data, (state, action, [reward], next_state, convert.(Int, [done])))
+end
+
+function train_short_memory(
+    agent::DQNAgent,
+    state::S,
+    action::S,
+    reward::T,
+    next_state::S,
+    done::Bool
+) where {T<:Integer,S<:AbstractArray{<:T}}
+    update!(agent, state, action, reward, next_state, done)
+end
+
+function train_long_memory(agent::DQNAgent)
+    if length(agent.memory.data) > BATCH_SIZE
+        mini_sample = sample(agent.memory.data, BATCH_SIZE)
+    else
+        mini_sample = agent.memory.data
+    end
+
+    states, actions, rewards, next_states, dones = map(x -> getfield.(mini_sample, x), fieldnames(eltype(mini_sample)))
+
+    update!(agent, states, actions, rewards, next_states, dones)
+end
+
 function update!(
-    agent::TetrisAgent,
+    agent::DQNAgent,
     state::Union{A,AA},
     action::Union{A,AA},
     reward::Union{T,AA},
@@ -165,10 +156,6 @@ function update!(
     done::Union{Bool,AA};
     α::Float32=0.9f0    # Step size
 ) where {T<:Integer,A<:AbstractArray{<:T},AA<:AbstractArray{A}}
-    # No criterion for random model
-    if agent.opt === nothing
-        return
-    end
 
     # Batching the states and converting data to Float32 (done implicitly otherwise)
     state = Flux.batch(state) |> x -> convert.(Float32, x) |> device
@@ -194,7 +181,7 @@ function update!(
         Rₙ = Buffer(ŷ, size(ŷ))
 
         # Adjusting values of current state with next state's knowledge
-        for idx in 1:length(done)
+        for idx in eachindex(done)
             # Copy preds into buffer
             Rₙ[:, idx] = ŷ[:, idx]
 
@@ -207,9 +194,30 @@ function update!(
             Rₙ[argmax(action[:, idx]), idx] = Qₙ
         end
         # Calculate the loss
-        agent.criterion(ŷ |> device, copy(Rₙ) |> device)
+        agent.loss(ŷ |> device, copy(Rₙ) |> device)
     end
 
     # Update model weights
     Flux.Optimise.update!(agent.opt, ps, gs)
+end
+
+"""
+Clones behavior from expert data to policy neural net
+"""
+function clone_behavior!(
+    agent::DQNAgent, 
+    lr::Float64 = 5e-4, 
+    batch_size::Int64 = 50, 
+    epochs::Int64 = 80)
+
+    agent.main_net = clone_behavior!(agent, agent.main_net, lr , batch_size, epochs)
+
+    agent.target_net = agent.main_net
+
+    return agent
+end
+
+function to_device!(agent::DQNAgent) 
+    agent.main_net = agent.main_net |> device
+    agent.target_net = agent.target_net |> device
 end

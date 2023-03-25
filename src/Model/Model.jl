@@ -1,13 +1,18 @@
 module Model
 
-using BSON, NNlib, Flux
+using BSON, NNlib, Flux, Dates
 
 import ..TetrisAI: MODELS_PATH
 import Flux: Chain, Dense, relu
 
-export linear_QNet, random_Net, save_model, load_model
+export dense_net, random_Net, save_model, load_model
 
-function save_model(name::AbstractString, model::Chain)
+function save_model(model::Chain, name::AbstractString=nothing)
+
+    if isnothing(name)
+        suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
+        name = "model_$suffix"
+    end
 
     file = string(name, ".bson")
 

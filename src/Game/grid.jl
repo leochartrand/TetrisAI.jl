@@ -63,7 +63,7 @@ function get_state(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
         end
     end
     # Return visible grid
-    return state
+    return state[4:23,:]
 end
 
 """

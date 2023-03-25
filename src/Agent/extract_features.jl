@@ -112,6 +112,22 @@ function get_n_holes(feature_grid::Matrix{Int})
 end
 
 """
+Util function to obtain active position from the game grid if it's not provided.
+Useful for Imitation learning. 
+Finds the first cell from top left that is occupied by the active piece
+"""
+function get_active_piece_pos(raw_grid::Matrix{Int})
+    for i in 1:20, j in 1:10
+        if raw_grid[i,j] == 2 
+            return i,j
+        end
+    end
+
+    # If the active piece is not in the visible grid, return top-center cell
+    return 1,5
+end
+
+"""
 Returns a grid that highlights the features of every cell
 Features:
     0 = Empty;
@@ -166,7 +182,7 @@ function get_feature_grid(raw_grid::Matrix{Int})
     # Identify active piece cells and holes
     for i in 3:20, j in 1:10
         # Empty cell
-        if feature_grid[i,j] == 0 && feature_grid[i-1,j] == 0 && feature_grid[i-2,j] == 0
+        if feature_grid[i,j] == 0 && (feature_grid[i-1,j] == 0 || feature_grid[i-1,j] == 5) && (feature_grid[i-2,j] == 0 || feature_grid[i-2,j] == 5)
             if (j==1 || feature_grid[i-1,j-1] == 1 && feature_grid[i-2,j-1] == 1) && (j==10 || feature_grid[i-1,j+1] == 1 && feature_grid[i-2,j+1] == 1)
                 feature_grid[i,j] = 5
             end
@@ -198,7 +214,7 @@ end
 
 """
 Util function to print raw grid and feature grid side by side.
-For feature engineering development.
+For feature engineering development and debugging.
 """
 function print_grids(raw_grid,feature_grid)
     println("--------RAW GRID------------FEATURE GRID-----")
@@ -227,25 +243,27 @@ function get_state_features(state::Vector{Int}, active_piece_row::Int, active_pi
     features = Float64[]
 
     # Extract board state and reshape
-    raw_grid = permutedims(reshape(state[59:258], (10,20)),(2,1))
+    raw_grid = permutedims(reshape(state[29:228], (10,20)),(2,1))
 
     # Generate Feature grid
     feature_grid = get_feature_grid(raw_grid)
     
     column_heights = get_column_heights(feature_grid)
     for i in 1:10
-        vcat(features,column_heights[i])
+        features = vcat(features,column_heights[i])
     end
     max_height = maximum(column_heights)
-    vcat(features,max_height)
+    features = vcat(features,max_height)
     mean_height = Statistics.mean(column_heights)
-    vcat(features,mean_height)
+    features = vcat(features,mean_height)
     fall_height = get_fall_height(raw_grid, active_piece_row, active_piece_col)
-    vcat(features,fall_height)
+    features = vcat(features,fall_height)
     bumpiness = get_bumpiness(raw_grid)
-    vcat(features,bumpiness)
+    features = vcat(features,bumpiness)
     n_holes = get_n_holes(raw_grid)
-    vcat(features,n_holes)
+    features = vcat(features,n_holes)
+    features = vcat(features,convert(Float64,active_piece_row))
+    features = vcat(features,convert(Float64,active_piece_col))
 
     # print_grids(raw_grid,feature_grid)
 
@@ -253,9 +271,22 @@ function get_state_features(state::Vector{Int}, active_piece_row::Int, active_pi
 end
 
 """
+Extracts features from the game state. 
+Placeholder function to be used when active piece position is not provided.
+"""
+function get_state_features(state::Vector{Int})
+
+    active_piece_row, active_piece_col = get_active_piece_pos(permutedims(reshape(state[29:228], (10,20)),(2,1)))
+
+    features = get_state_features(state, active_piece_row, active_piece_col)
+
+    return features
+end
+
+"""
 Shaping the reward based on human developped heuristics to guide the agent to its first line completed.
 """
-function computeIntermediateReward!(game_grid::Matrix{Int}, last_score::Integer, lines::Int)
+function computeIntermediateReward(game_grid::Matrix{Int}, last_score::Integer, lines::Int)
     height_cte = -0.510066
     lines_cte = 0.760666
     holes_cte = -0.35663
@@ -273,5 +304,20 @@ function computeIntermediateReward!(game_grid::Matrix{Int}, last_score::Integer,
     score = (height_cte * height_avg) + (lines_cte * lines) + (holes_cte * holes) + (bumpiness_cte * bumps)
     reward = score - last_score
     last_score = Int(round(score))
+    return reward
+end
+
+function shape_rewards(game::TetrisAI.Game.AbstractGame, lines::Integer)
+
+    if lines != 0
+        agent.ω += 0.1
+    end
+    # Exploration to use an intermediate fitness function for early stages
+    # Ref: http://cs231n.stanford.edu/reports/2016/pdfs/121_Report.pdf
+    # As we score more and more lines, we change the scoring more and more to the
+    # game's score instead of the intermediate rewards that are used only for the
+    # early stages.
+    reward = Int(round(((1 - agent.ω) * computeIntermediateReward(game.grid.cells, agent.current_score, lines)) + (agent.ω * (lines ^ 2))))
+
     return reward
 end
