@@ -211,7 +211,6 @@ function check_for_lines!(game::AbstractGame)
         end
     end
 
-    println("Cleared lines : ", cleared_lines)
     return cleared_lines
 end
 

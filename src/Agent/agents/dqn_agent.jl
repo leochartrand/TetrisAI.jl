@@ -42,7 +42,7 @@ function get_action(agent::DQNAgent, state::AbstractArray{<:Integer}; rand_range
         final_move[move] = 1
     else
         state = state |> device
-        pred = agent.model(state)
+        pred = agent.main_net(state)
         pred = pred |> cpu
         final_move[Flux.onecold(pred)] = 1
     end
@@ -165,16 +165,16 @@ function update!(
     done = Flux.batch(done)
 
     # Model's prediction for next state
-    y = agent.model(next_state) 
+    y = agent.main_net(next_state) 
     y = y |> cpu
 
     # Get the model's params for back propagation
-    ps = Flux.params(agent.model)
+    ps = Flux.params(agent.main_net)
 
     # Calculate the gradients
     gs = Flux.gradient(ps) do
         # Forward pass
-        ŷ = agent.model(state)
+        ŷ = agent.main_net(state)
         ŷ = ŷ |> cpu
 
         # Creating buffer to allow mutability when calculating gradients
