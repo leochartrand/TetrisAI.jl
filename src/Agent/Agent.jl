@@ -24,9 +24,10 @@ export AbstractAgent,
     to_device!
 
 
+include("tetris_agent.jl")
 include("memory.jl")
 include("extract_features.jl")
-include("tetris_agent.jl")
+include("behavior_cloning.jl")
 include("agents/dqn_agent.jl")
 include("agents/sarsa_agent.jl")
 include("agents/ppo_agent.jl")
