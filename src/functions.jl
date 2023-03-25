@@ -148,7 +148,7 @@ function pretrain_agent(model_name::AbstractString; lr::Float64 = 5e-4, batch_si
 end
 
 function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
-    benchmark = CreateScoreBenchMark(N)
+    benchmark = ScoreBenchMark(n=N)
 
     # The following 3 definitions are specifically for the reward shaping functionnality.
     # Might need to move them somewhere else since they are related only to a specific agent.

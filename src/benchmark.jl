@@ -5,26 +5,12 @@ Base.@kwdef mutable struct ScoreBenchMark
     xlabel::String          = "Itérations"
     ylabel::String          = "Score"
     graph_steps::Int64      = round(n / 10)
-    scores::Vector{Int64}
-    ticks::Vector{Int64}
+    scores::Vector{Int64}   = Vector{Int64}()
+    ticks::Vector{Int64}    = Vector{Int64}()
     i::Int64                = 0
     current_max_y           = 0 # Used for ylims when plotting
     xticks                  = 0:graph_steps:n # Will be updated everytime we append something to the list
     linewidth               = 2
-end
-
-function CreateScoreBenchMark(n::Int64)
-    linecolor               = [:orange :blue]
-    labels::Array{String}   = ["Scores" "Nombre de ticks"]
-    xlabel::String          = "Itérations"
-    ylabel::String          = "Score"
-    graph_steps::Int64      = round(n / 10)
-    i::Int64                = 0
-    current_max_y           = 0 # Used for ylims when plotting
-    xticks                  = 0:graph_steps:n # Will be updated everytime we append something to the list
-    linewidth               = 2
-
-    return ScoreBenchMark(n, linecolor, labels, xlabel, ylabel, graph_steps, Vector{Int64}(), Vector{Int64}(), i, current_max_y, xticks, linewidth)
 end
 
 """
