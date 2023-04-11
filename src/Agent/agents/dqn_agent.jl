@@ -1,13 +1,7 @@
 using CUDA
 using Flux: gpu, cpu
 using Flux: onehotbatch, onecold
-using Flux.Data: DataLoader
 using Flux.Losses: logitcrossentropy
-
-# Should be refactored
-const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
-const STATES_PATH = joinpath(DATA_PATH, "states")
-const LABELS_PATH = joinpath(DATA_PATH, "labels")
 
 if CUDA.functional()
     CUDA.allowscalar(false)
@@ -23,6 +17,7 @@ Base.@kwdef mutable struct DQNAgent <: AbstractAgent
     record::Int = 0
     current_score::Int = 0
     feature_extraction::Bool = false
+    n_features::Int = 17
     reward_shaping::Bool = false
     ω::Float64 = 0              # Reward shaping constant
     η::Float64 = 1e-3           # Learning rate
@@ -31,8 +26,8 @@ Base.@kwdef mutable struct DQNAgent <: AbstractAgent
     ϵ_decay::Float64 = 1
     ϵ_min::Float64 = 0.05
     memory::AgentMemory = CircularBufferMemory()
-    main_net = TetrisAI.Model.dense_net(228, 7)
-    target_net = TetrisAI.Model.dense_net(228, 7)
+    main_net = (feature_extraction ? TetrisAI.Model.dense_net(n_features, 7) : TetrisAI.Model.dense_net(228, 7)) |> device
+    target_net = (feature_extraction ? TetrisAI.Model.dense_net(n_features, 7) : TetrisAI.Model.dense_net(228, 7)) |> device
     opt::Flux.Optimise.AbstractOptimiser = Flux.ADAM(η)
     loss::Function = logitcrossentropy
 end
@@ -47,7 +42,7 @@ function get_action(agent::DQNAgent, state::AbstractArray{<:Integer}; rand_range
         final_move[move] = 1
     else
         state = state |> device
-        pred = agent.model(state)
+        pred = agent.main_net(state)
         pred = pred |> cpu
         final_move[Flux.onecold(pred)] = 1
     end
@@ -170,16 +165,16 @@ function update!(
     done = Flux.batch(done)
 
     # Model's prediction for next state
-    y = agent.model(next_state) 
+    y = agent.main_net(next_state) 
     y = y |> cpu
 
     # Get the model's params for back propagation
-    ps = Flux.params(agent.model)
+    ps = Flux.params(agent.main_net)
 
     # Calculate the gradients
     gs = Flux.gradient(ps) do
         # Forward pass
-        ŷ = agent.model(state)
+        ŷ = agent.main_net(state)
         ŷ = ŷ |> cpu
 
         # Creating buffer to allow mutability when calculating gradients
@@ -215,79 +210,7 @@ function clone_behavior!(
     batch_size::Int64 = 50, 
     epochs::Int64 = 80)
 
-    states = Int[]
-    labels = Int[]
-
-    # Minus 1 for .gitkeep
-    n_files = length(readdir(STATES_PATH)) - 1
-
-    # Ignore hidden files
-    states_files = [joinpath(STATES_PATH, file) for file in readdir(STATES_PATH) if startswith(file, ".") == false]
-    labels_files = [joinpath(LABELS_PATH, file) for file in readdir(LABELS_PATH) if startswith(file, ".") == false]
-
-    for file in states_files
-        line = readline(file)
-        state = JSON.parse(JSON.parse(line))["state"]   # oopsie?
-
-        append!(states, state)
-    end
-
-    for file in labels_files
-        line = readline(file)
-        action = JSON.parse(JSON.parse(line))["action"] # god...
-        action = onehotbatch(action, 1:7)
-
-        append!(labels, action)
-    end
-
-    # Minus 1 for .gitkeep
-    states = reshape(states, :, 1, n_files)
-    labels = reshape(labels, :, 1, n_files)
-
-    # Homemade split to have at least a testing metric
-    train_states = states[:, :, begin:end - 100]
-    train_labels = labels[:, :, begin:end - 100]
-    test_states = states[:, :, end - 100:end]
-    test_labels = labels[:, :, end - 100:end]
-
-    train_loader = DataLoader((train_states, train_labels), batchsize = batch_size, shuffle = true)
-    test_loader = DataLoader((test_states, test_labels), batchsize = batch_size)
-
-    ps = Flux.params(agent.main_net) # model's trainable parameters
-
-    loss = Flux.Losses.logitcrossentropy
-
-    opt = Flux.ADAM(lr)
-
-    iter = ProgressBar(1:epochs)
-    set_description(iter, "Pre-training the model on $epochs epochs, with $n_files states:")
-
-    for _ in iter
-        for (x, y) in train_loader
-            gs = Flux.gradient(ps) do
-                    ŷ = agent.main_net(x)
-                    loss(ŷ, y)
-                end
-
-            Flux.Optimise.update!(opt, ps, gs)
-        end
-    end
-
-    # Testing the model
-    acc = 0.0
-	n = 0
-	
-	for (x, y) in test_loader
-		ŷ = agent.main_net(x)
-
-		# Comparing the model's predictions with the labels
-		acc += sum(onecold(ŷ |> cpu ) .== onecold(y |> cpu))
-
-		# keeping track of the number of pictures we tested
-		n += size(x)[end]
-	end
-
-    println("Final accuracy : ", acc/n * 100, "%")
+    agent.main_net = clone_behavior!(agent, agent.main_net, lr , batch_size, epochs)
 
     agent.target_net = agent.main_net
 

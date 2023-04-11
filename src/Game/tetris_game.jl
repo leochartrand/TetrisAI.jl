@@ -115,6 +115,8 @@ function tick!(game::AbstractGame)
         put_piece!(game.grid, game.active_piece)
     end
 
+    
+
     return lines, game.is_over, game.score
 end
 
@@ -208,6 +210,7 @@ function check_for_lines!(game::AbstractGame)
             # print("\n")
         end
     end
+
     return cleared_lines
 end
 
