@@ -99,9 +99,13 @@ function train_agent(agent::AbstractAgent; N::Int=100, run_id::String=nothing, l
         update_benchmark(benchmark, update_rate, iter, render)
     end
 
-    if !isnothing(run_id)
-        save_to_csv(benchmark, run_id * "-data.csv")
+    if isnothing(run_id)
+        prefix = agent.type
+        suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
+        run_id = "$prefix-$suffix"
     end
+
+    save_to_csv(benchmark, run_id * ".csv")
     
 
     @info "Agent high score after $N games => $(agent.record) pts"
