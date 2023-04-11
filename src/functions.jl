@@ -4,6 +4,7 @@ using CUDA
 using Plots
 import Flux: gpu, cpu
 using JSON
+using Dates
 
 import TetrisAI: Game, MODELS_PATH
 import TetrisAI.Agent: AbstractAgent
@@ -67,10 +68,9 @@ function pretrain_agent(
     clone_behavior!(agent,lr,batch_size,epochs)
 end
 
-function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
+function train_agent(agent::AbstractAgent; N::Int=100, run_id::String="", limit_updates::Bool=true, render::Bool=true)
     benchmark = ScoreBenchMark(n=N)
 
-    graph_steps = round(N / 10)
     update_rate::Int64 = 1
     if limit_updates
         update_rate = max(round(N * 0.05), 1)
@@ -97,9 +97,17 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
         end
 
         append_score_ticks!(benchmark, score, nb_ticks)
-        update_benchmark(benchmark, update_rate)
+        update_benchmark(benchmark, update_rate, iter, render)
     end
 
+    if isempty(run_id)
+        prefix = agent.type
+        suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
+        run_id = "$prefix-$suffix"
+    end
+
+    save_to_csv(benchmark, run_id * ".csv")
+    
 
     @info "Agent high score after $N games => $(agent.record) pts"
 end
