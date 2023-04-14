@@ -107,7 +107,7 @@ def clean_games(states_lists: List, labels_lists: List, scores: List, hold_toler
             print(f'Too many holds: {hold_freq}')
 
     print(f'Sanity check: best score = {clean_scores[-1]} == 57600')
-    print(f'Sanity check: num games = {len(clean_scores)}')
+    print(f'Sanity check: filtered num games = {len(clean_scores)}')
 
     return clean_states, clean_labels, clean_scores
 
@@ -117,6 +117,9 @@ def select_games(N, states: List, labels: List, ordered_scores: List):
 
 
 def assemble(states_list: List, labels_list: List):
+
+    print(f'Sanity check: final num games = {len(labels_list)}')
+
     states = [state for game_states in states_list for state in game_states]
     labels = [label for game_states in labels_list for label in game_states]
 
