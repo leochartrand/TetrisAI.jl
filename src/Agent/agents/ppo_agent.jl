@@ -23,6 +23,7 @@ Base.@kwdef mutable struct PPOAgent <: AbstractAgent
     value_max_iters::Integer    = 100
     policy_lr::Float32          = 1e-4
     value_lr::Float32           = 1e-2
+    max_ticks::Integer          = 20000
 
     # might miss the value params here
     # might miss the policy params here
@@ -31,6 +32,7 @@ Base.@kwdef mutable struct PPOAgent <: AbstractAgent
     γ::Float32                  = 0.99 # Reward discounting
     policy_optimizer::Flux.Optimise.AbstractOptimiser = Flux.ADAM(policy_lr)
     val_optimizer::Flux.Optimise.AbstractOptimiser = Flux.ADAM(value_lr)
+    reward_shaping::Bool        = false
 
     ep_states::AbstractArray{<:Float32}       = []
     ep_acts::AbstractArray{<:Float32}         = []
@@ -56,19 +58,87 @@ function reset_episode_data!(agent::PPOAgent)
     agent.ep_reward = 0
 end
 
-function perform_rollout_step(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
-    train_data = []
-    ep_reward = 0
+function rollout(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
+    train_data::AbstractArray = [[], [], [], []]
+    while !done || nb_ticks > agent.max_ticks
+        # Get the current step
+        old_state = TetrisAI.Game.get_state(game)
 
-    # TODO: Implement this correctly
+        # Get the predicted move for the state
+        action = get_action(agent, old_state)
+        TetrisAI.send_input!(game, action)
 
-    old_state = TetrisAI.Game.get_state(game)
+        reward = 0
+        # Play the step
+        lines, done, score = TetrisAI.Game.tick!(game)
+        new_state = TetrisAI.Game.get_state(game)
 
-    get_action(agent, )
-    TetrisAI.send_input!(game, action)
-    lines, done, score = TetrisAI.Game.tick!(game)    
+        # Adjust reward accoring to amount of lines cleared
+        if agent.reward_shaping
+            reward = shape_rewards(game, lines)
+        else
+            if lines > 0
+                reward = [1, 5, 10, 50][lines]
+            end
+        end
+
+        nb_ticks = nb_ticks + 1
+    end
 
     return done, score
+end
+
+function train!(agent::PPOAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, limit_updates::Bool=true)
+    benchmark = ScoreBenchMark(n=N)
+
+    update_rate::Int64 = 1
+    if limit_updates
+        update_rate = max(round(N * 0.05), 1)
+    end
+
+    to_device!(agent)
+
+    iter = ProgressBar(1:N)
+    set_description(iter, "Training the agent on $N games:")
+
+    for _ in iter
+        done = false
+        score = 0
+        nb_ticks = 0
+        
+
+
+        # Shuffle the training data
+        perms = randperm(length(ep_states))
+
+        #ep_states     = ep_states[perms]
+        #ep_acts       = ep_acts[perms]
+        #ep_log_probs  = ep_acts[perms]
+        #ep_reward     = discount_reward(agent.ep_reward, agent.γ)[perms]
+
+        train_policy!(agent)
+        train_value!(agent, returns)
+
+        TetrisAI.Game.reset!(game)
+        agent.n_games += 1
+
+        if score > agent.record
+            agent.record = score
+        end
+
+        append_score_ticks!(benchmark, score, nb_ticks)
+        update_benchmark(benchmark, update_rate, iter, render)
+    end
+
+    if isempty(run_id)
+        prefix = agent.type
+        suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
+        run_id = "$prefix-$suffix"
+    end
+
+    save_to_csv(benchmark, run_id * ".csv")
+
+    @info "Agent high score after $N games => $(agent.record) pts"
 end
 
 function train!(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
