@@ -9,19 +9,6 @@ using Dates
 import TetrisAI: Game, MODELS_PATH
 import TetrisAI.Agent: AbstractAgent
 
-
-# SHould be refactored
-const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
-const STATES_PATH = joinpath(DATA_PATH, "states")
-const LABELS_PATH = joinpath(DATA_PATH, "labels")
-
-if CUDA.functional()
-    CUDA.allowscalar(false)
-    device = gpu
-else
-    device = cpu
-end
-
 function play_tetris()
     rungame("src/play.jl")
 end

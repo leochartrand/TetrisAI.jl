@@ -1,6 +1,3 @@
-using Statistics
-
-# import ..Tetrominoes: rotate_left!, rotate_right!, drop!, move_left!, move_right!
 abstract type AbstractGame end
 """
 Representation of a tetris game
@@ -12,8 +9,8 @@ Base.@kwdef mutable struct TetrisGame{T<:Integer} <: AbstractGame
     line_count::T = 0
     score::T = 0
     bag::Bag = Bag()
-    active_piece::Tetrominoes.AbstractTetromino = pop_piece!(bag)
-    hold_piece::Union{Tetrominoes.AbstractTetromino,Nothing} = nothing
+    active_piece::AbstractTetromino = pop_piece!(bag)
+    hold_piece::Union{AbstractTetromino,Nothing} = nothing
     grid::Grid = put_piece!(Grid(), active_piece)
     steps::T = 0
     new_hold::Bool = false
