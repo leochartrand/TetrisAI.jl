@@ -23,6 +23,7 @@ Enum mapping keys for the experience replay buffer. Each key maps is used to map
     KEY_ACTIONS = "actions"
     KEY_LOG_PROBS = "log_probs"
     KEY_GAES = "gaes"
+    KEY_VALUES = "values"
 end
 
 """
@@ -44,12 +45,14 @@ Base.@kwdef mutable struct PPOAgent <: AbstractAgent
     policy_lr::Float32          = 1e-4
     value_lr::Float32           = 1e-2
     max_ticks::Integer          = 20000
+    gaes_decay::Float32         = 0.97
 
     # might miss the value params here
     # might miss the policy params here
 
     ε::Float32                  = 0.02 # Clipping value
     γ::Float32                  = 0.99 # Reward discounting
+    target_kl_div::Float32      = 0.01 
     policy_optimizer::Flux.Optimise.AbstractOptimiser = Flux.ADAM(policy_lr)
     val_optimizer::Flux.Optimise.AbstractOptimiser = Flux.ADAM(value_lr)
     reward_shaping::Bool        = false
@@ -66,10 +69,12 @@ function Base.show(io::IO, agent::PPOAgent)
     println("value_max_iters => \t", agent.value_max_iters)
     println("policy_lr => \t", agent.policy_lr)
     println("value_lr => \t", agent.value_lr)
+    println("target_kl_div => \t", agent.target_kl_div)
     println("ε => \t\t", agent.ε)
     println("γ => \t\t", agent.γ)
     println("policy_optimizer => \t", agent.policy_optimizer)
     println("value_optimizer => \t", agent.val_optimizer)
+    println("gaes_decay => \t", agent.gaes_decay)
 end
 
 """
@@ -94,28 +99,37 @@ It returns the training data, the episode total rewards, the score and the numbe
 """
 function rollout(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
     ep_reward = 0
+    nb_ticks = 0
+    score = 0
+    done = false
+    old_state = TetrisAI.Game.get_state(game)
     train_data::AbstractArray = Dict([
         (KEY_STATES, []),
         (KEY_ACTIONS, []),
         (KEY_LOG_PROBS, []),
         (KEY_REWARDS, []),
-        (KEY_GAES, [])
+        (KEY_GAES, []),
+        (KEY_VALUES, [])
     ])
 
     while !done || nb_ticks > agent.max_ticks
-        # Get the current step
-        old_state = TetrisAI.Game.get_state(game)
+        
+        reward = 0
 
         # Get the predicted move for the state
-        action = get_action(agent, old_state)
-        TetrisAI.send_input!(game, action)
+        policy_logits, val = forward(agent, state)
+        act_dist = softmax(policy_logits)
+        act_log_probs = log(act_dist)
+        act = sample(1:length(act_dist), Weights(act_dist))
+        action_vect = zeros(Int, length(act_dist))
+        action_vect[act] = 1
 
-        reward = 0
-        # Play the step
-        lines, done, score = TetrisAI.Game.tick!(game)
+        #-! Play the action
+        TetrisAI.send_input!(game, final_move)          # Send the action
+        lines, done, score = TetrisAI.Game.tick!(game)  # Play the step
         new_state = TetrisAI.Game.get_state(game)
 
-        # Adjust reward accoring to amount of lines cleared
+        #-! Compute reward according to the number of lines cleared
         if agent.reward_shaping
             reward = shape_rewards(game, lines)
         else
@@ -124,8 +138,19 @@ function rollout(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
             end
         end
 
+        #-! Append the old stuff to the training data
+        push!(train_data[KEY_STATES], old_state)
+        push!(train_data[KEY_ACTIONS], action_vect)
+        push!(train_data[KEY_REWARDS], reward)
+        push!(train_data[KEY_VALUES], val)
+        push!(train_data[KEY_LOG_PROBS], act_log_probs)
+
+        old_state = new_state
+        ep_reward += reward
         nb_ticks = nb_ticks + 1
     end
+
+    train_data[KEY_GAES] = calculate_gaes(train_data[KEY_REWARDS], train_data[KEY_VALUES], agent.γ, agent.gaes_decay)
 
     return train_data, ep_reward, score, nb_ticks
 end
@@ -163,7 +188,7 @@ function train!(agent::PPOAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, lim
         returns     = discount_reward(get(train_data, KEY_REWARDS, []), agent.γ)[perms]
 
         train_policy!(agent, states, acts, log_probs, gaes)
-        train_value!(agent, returns)
+        train_value!(agent, states, returns)
 
         TetrisAI.Game.reset!(game)
         agent.n_games += 1
@@ -198,9 +223,6 @@ function discount_reward(rewards::AbstractArray{<:Float32}, γ::Float32)
         discounted = rewards[i] + γ * new_rewards[end]
         push!(new_rewards, discounted)
     return rewards
-end
-
-function to_device!(agent::PPOAgent)
 end
 
 """
@@ -241,8 +263,28 @@ end
 Updates the agent's policy using agent.policy_max_iters iterations to modify the policy by optimizing PPO's surrogate objective
 function.
 """
-function train_policy!(agent::PPOAgent, obs::AbstractArray, acts::AbstractArray, old_log_probs::AbstractArray, gaes::AbstractArray)
-    # TODO: IMPLEMENT
+function train_policy!(agent::PPOAgent, states::AbstractArray, acts::AbstractArray, old_log_probs::AbstractArray, gaes::AbstractArray)
+    
+    policy_ratio = 0
+    for _ in 1:agent.policy_max_iters
+        ps = Flux.params(agent.policy_model)
+        gs = Flux.gradient(ps) do 
+            new_logits = agent.policy_model(states)
+            new_log_probs = log(softmax(new_logits))
+            policy_ratio = new_log_probs - old_log_probs
+            full_loss = policy_ratio * gaes
+            clipped_loss = clamp(policy_ratio, 1-agent.ε, 1+agent.ε) * gaes
+            min(full_loss, clipped_loss)
+        end
+
+        Flux.Optimise.update!(agent.policy_optimizer, ps, gs)
+
+        # TODO: Verify that the estimate of the kl_div works
+        kl_div = mean(policy_ratio)
+        if kl_div >= agent.target_kl_div
+            break
+        end
+    end
 end
 
 """
@@ -251,16 +293,16 @@ end
 Updates the agent's value function using a mean squared difference loss on the value estimations and the actual returns
 for agent.value_max_iters iterations.
 """
-function train_value!(agent::PPOAgent, returns::AbstractArray{Float32})
+function train_value!(agent::PPOAgent, states::AbstractArray{Float32}, returns::AbstractArray{Float32})
+    loss(a, s, ret) = mean((ret - value_forward(a, s))^2)
     for _ in 1:agent.value_max_iters
-        # TODO: Zero out the gradients
 
-        values = value_forward(agent.ep_states, returns)
-        value_loss = (returns - values)^2
-        value_loss = mean(value_loss)
-
-        # TODO: Compute gradients (value_loss.backward())
-        # TODO: Gradient descent (agent.value_optimizer.step())
+        ps = Flux.params(agent.value_model)
+        gs = Flux.gradient(ps) do
+            loss(agent, states, returns)
+        end
+        
+        Flux.Optimise.update!(agent.val_optimizer, ps, gs)
     end
 end
 
@@ -270,5 +312,8 @@ end
 [NOT IMPLEMENTED] Will pre-train the PPO agent based on an expert dataset.
 """
 function clone_behavior!(agent::PPOAgent)
+end
+
+function to_device!(agent::PPOAgent)
 end
 
