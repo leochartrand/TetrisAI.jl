@@ -8,7 +8,6 @@ abstract type AbstractTetromino end
 """
     Base.show(io::IO, t::AbstractTetromino)
 
-
 Output on IO of current object
 """
 function Base.show(io::IO, t::AbstractTetromino)
@@ -24,7 +23,6 @@ end
 """
     Base.size(t::AbstractTetromino, d...)
 
-
 Get the size of a tetromino's shape
 """
 function Base.size(t::AbstractTetromino, d...)
@@ -33,7 +31,6 @@ end
 
 """
     Base.getindex(t::AbstractTetromino, I...)
-
 
 Get index of a piece redirects directly to it's shape
 """
@@ -44,7 +41,6 @@ end
 """
     Base.setindex!(t::AbstractTetromino, I...)
 
-
 Set index of a piece redirects directly to it's shape
 """
 function Base.setindex!(t::AbstractTetromino, I...)
@@ -54,7 +50,6 @@ end
 """
     shape(t::AbstractTetromino)
 
-
 Get the current shape of a tetromino
 """
 function shape(t::AbstractTetromino)
@@ -63,7 +58,6 @@ end
 
 """
     move_left!(t::AbstractTetromino)
-
 
 Moves the tetromino one block to the left
 """
@@ -75,7 +69,6 @@ end
 """
     move_right!(t::AbstractTetromino)
 
-
 Moves the tetromino one block to the right
 """
 function move_right!(t::AbstractTetromino)
@@ -85,7 +78,6 @@ end
 
 """
     drop!(t::AbstractTetromino)
-
 
 Drops the tetromino down once.
 """
@@ -97,7 +89,6 @@ end
 """
     rotate_clockwise!(t::AbstractTetromino)
 
-
 Rotates the piece clockwise
 """
 function rotate_clockwise!(t::AbstractTetromino)
@@ -108,7 +99,6 @@ end
 """
     rotate_counter_clockwise!(t::AbstractTetromino)
 
-
 Rotates a piece counter-clockwise
 """
 function rotate_counter_clockwise!(t::AbstractTetromino)
@@ -118,7 +108,6 @@ end
 
 """
     reset!(t::AbstractTetromino)
-
 
 Resets a tetromino to it's starting position
 """

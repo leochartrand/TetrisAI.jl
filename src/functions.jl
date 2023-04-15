@@ -28,7 +28,7 @@ end
     play_tetris()
 
 
-Play using Tetris' interface
+Play using Tetris' interface.
 """
 function play_tetris()
     rungame("src/play.jl")
@@ -37,7 +37,7 @@ end
 """
     model_demo(name::AbstractString)
 
-Run a model game
+Run a model game.
 """
 function model_demo(name::AbstractString)
 
@@ -59,7 +59,10 @@ end
 """
     collect_data()
 
-Play using the Tetris' interface and upload the game data to AWS S3 Bucket
+Play using the Tetris' interface and upload the game data to AWS S3 Bucket.
+Make use of two threads to avoid wait time at the end of a game:
+1. Thread to run the gameplay
+2. Thread that uploads the game's data to the AWS S3 Bucket.
 """
 function collect_data()
     t2 = Threads.@spawn process_data()
@@ -75,12 +78,12 @@ end
 
 """
     pretrain_agent(
-    agent::AbstractAgent,
-    lr::Float64 = 5e-4, 
-    batch_size::Int64 = 50, 
-    epochs::Int64 = 80)
+        agent::AbstractAgent,
+        lr::Float64 = 5e-4, 
+        batch_size::Int64 = 50, 
+        epochs::Int64 = 80)
 
-Train model on generated training data
+Train model on generated training data.
 """
 function pretrain_agent(
     agent::AbstractAgent,

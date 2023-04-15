@@ -29,27 +29,10 @@ makedocs(;
             "Agent/sarsa_agent.md",
             "Agent/tetris_agent.md"
         ],
-        "Game" => Any[
-            "Game/index.md",
-            "Game/bag.md",
-            "Game/grid.md",
-            "Game/tetris_game.md"
-        ],
-        "GUI" => Any[
-            "GUI/index.md"
-            "GUI/gui.md"
-        ],
-        "Model" => Any[
-            "Model/index.md"
-            "Model/models.md"
-        ],
-        "Tetrominoes" => Any[
-            "Tetrominoes/index.md"
-            "Tetrominoes/tetrominoes.md"
-        ],
-        "Utils" => Any[
-            "Utils/index.md"
-            "Utils/utils.md"
-        ]
+        "Game" => "game.md",
+        "GUI" => "gui.md",
+        "Model" => "model.md",
+        "Tetrominoes" => "tetrominoes.md",
+        "Utils" => "utils.md"
     ],
 )

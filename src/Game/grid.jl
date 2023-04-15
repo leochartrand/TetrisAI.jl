@@ -5,6 +5,11 @@ Base.@kwdef mutable struct Grid{T<:Integer} <: AbstractGrid
     cells::Matrix{T} = zeros(Int, rows, cols)
 end
 
+"""
+    Base.show(io::IO, g::Grid)
+
+Print the grid's representation on the console.
+"""
 function Base.show(io::IO, g::Grid)
     let NB_VISIBLE_ROWS = 20, NB_HIDDEN_ROWS = g.rows - NB_VISIBLE_ROWS
 
@@ -29,6 +34,8 @@ function clear!(g::AbstractGrid)
 end
 
 """
+    downshift!(g::Grid, row::Int)
+
 Shifts the grid down above the specified row.
 The grid doesn't implement gravity and acts as a sticky board by default.
 """
@@ -46,7 +53,6 @@ end
 
 """
     get_state(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
-
 
 Generates a simplified grid
 """
@@ -72,7 +78,6 @@ end
 """
     put_piece!(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
 
-
 Puts a piece on the grid
 """
 function put_piece!(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
@@ -89,8 +94,7 @@ end
 """
     clear_piece_cells!(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
 
-Clear the space occupied by the active piece in the grid
-
+Clear the space occupied by the active piece in the grid.
 If the active piece overlap with other pieces in the grid, the other pieces will
 not be cleared.
 """
@@ -108,7 +112,6 @@ end
     is_out_of_bounds(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
 
 Check if a tetromino is out of bounds. Useful when performing moves and rotations.
-
 Some parts of the tetromino shape can be out of bounds (0 in shape matrix),
 we only perform OTB calculations on the actual blocks of the tetromino.
 """
@@ -130,7 +133,7 @@ end
 """
     is_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino; direction::Symbol=:Bottom)
 
-Check if a tetromino will collide with another tetromino on the grid
+Check if a tetromino will collide with another tetromino on the grid.
 """
 function is_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino; direction::Symbol=:Bottom)
     function bottom_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
