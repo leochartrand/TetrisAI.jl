@@ -24,7 +24,7 @@ export random_Net, load_model, save_model
 
 include("Agent/Agent.jl")
 using .Agent
-export AbstractAgent, RandomAgent, to_device!, DQNAgent, SARSAAgent
+export AbstractAgent, RandomAgent, to_device!, DQNAgent
 
 include("GUI/GUI.jl")
 using .GUI
