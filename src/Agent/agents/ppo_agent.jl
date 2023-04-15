@@ -12,6 +12,26 @@ else
     device = cpu
 end
 
+"""
+    BufferKeys
+
+Enum mapping keys for the experience replay buffer. Each key maps is used to map to a list.
+"""
+@enum BufferKeys begin
+    KEY_REWARDS = "rewards"
+    KEY_STATES = "states"
+    KEY_ACTIONS = "actions"
+    KEY_LOG_PROBS = "log_probs"
+    KEY_GAES = "gaes"
+end
+
+"""
+    PPOAgent
+
+Agent that learns using the state-of-the-art reinforcement learning technique called [Proximal Policy Optimisation](https://arxiv.org/abs/1707.06347).
+It's an on-policy learning algorithm and it's part of the Policy Gradient methods with an actor-critic architecture. It updates the policy within a
+pessimistic trust region (clipped ratio of policies) so the agent avoids modifying the policy too drastically, hence increases learning stability.
+"""
 Base.@kwdef mutable struct PPOAgent <: AbstractAgent
     type::String                = "PPO"
     n_games::Int                = 0    # Number of games played
@@ -33,14 +53,30 @@ Base.@kwdef mutable struct PPOAgent <: AbstractAgent
     policy_optimizer::Flux.Optimise.AbstractOptimiser = Flux.ADAM(policy_lr)
     val_optimizer::Flux.Optimise.AbstractOptimiser = Flux.ADAM(value_lr)
     reward_shaping::Bool        = false
-
-    ep_states::AbstractArray{<:Float32}       = []
-    ep_acts::AbstractArray{<:Float32}         = []
-    ep_gaes::AbstractArray{<:Float32}         = []
-    ep_log_probs::AbstractArray{<:Float32}    = []
-    ep_reward::Int                          = 0
 end
 
+function Base.show(io::IO, agent::PPOAgent)
+    println("AGENT ", agent.type)
+    println("n_games =>\t\t", agent.n_games)
+    println("record =>\t\t", agent.record)
+    println("shared_layers => \t", agent.shared_layers)
+    println("policy_layers => \t", agent.policy_layers)
+    println("value_layers => \t", agent.value_layers)
+    println("policy_max_iters => \t", agent.policy_max_iters)
+    println("value_max_iters => \t", agent.value_max_iters)
+    println("policy_lr => \t", agent.policy_lr)
+    println("value_lr => \t", agent.value_lr)
+    println("ε => \t\t", agent.ε)
+    println("γ => \t\t", agent.γ)
+    println("policy_optimizer => \t", agent.policy_optimizer)
+    println("value_optimizer => \t", agent.val_optimizer)
+end
+
+"""
+    get_action(agent::PPOAgent, state::AbstractArray{<:Integer}, nb_outputs::Integer=7)
+
+Selects an action from state using the distribution of action probabilities provided by the current policy.
+"""
 function get_action(agent::PPOAgent, state::AbstractArray{<:Integer}, nb_outputs::Integer=7)
     final_move = zeros(Int, nb_outputs)
     logits = policy_forward(agent, state)
@@ -50,16 +86,22 @@ function get_action(agent::PPOAgent, state::AbstractArray{<:Integer}, nb_outputs
     return final_move
 end
 
-function reset_episode_data!(agent::PPOAgent)
-    empty!(agent.ep_states)
-    empty!(agent.ep_acts)
-    empty!(agent.ep_gaes)
-    empty!(agent.ep_log_probs)
-    agent.ep_reward = 0
-end
+"""
+    rollout(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
 
+Performs a complete episode while storing the episode data that will be used for optimizing the policy and the value models.
+It returns the training data, the episode total rewards, the score and the number of ticks from the episode.
+"""
 function rollout(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
-    train_data::AbstractArray = [[], [], [], []]
+    ep_reward = 0
+    train_data::AbstractArray = Dict([
+        (KEY_STATES, []),
+        (KEY_ACTIONS, []),
+        (KEY_LOG_PROBS, []),
+        (KEY_REWARDS, []),
+        (KEY_GAES, [])
+    ])
+
     while !done || nb_ticks > agent.max_ticks
         # Get the current step
         old_state = TetrisAI.Game.get_state(game)
@@ -85,9 +127,14 @@ function rollout(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
         nb_ticks = nb_ticks + 1
     end
 
-    return done, score
+    return train_data, ep_reward, score, nb_ticks
 end
 
+"""
+    train!(agent::PPOAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, limit_updates::Bool=true)
+
+Trains the agent using trust region policy updates (clip) from PPO.
+"""
 function train!(agent::PPOAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, limit_updates::Bool=true)
     benchmark = ScoreBenchMark(n=N)
 
@@ -102,77 +149,49 @@ function train!(agent::PPOAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, lim
     set_description(iter, "Training the agent on $N games:")
 
     for _ in iter
-        done = false
-        score = 0
-        nb_ticks = 0
         
-
+        train_data, reward, score, nb_ticks = rollout(agent, game)
 
         # Shuffle the training data
         perms = randperm(length(ep_states))
 
-        #ep_states     = ep_states[perms]
-        #ep_acts       = ep_acts[perms]
-        #ep_log_probs  = ep_acts[perms]
-        #ep_reward     = discount_reward(agent.ep_reward, agent.γ)[perms]
+        # TODO: to device each list
+        states      = get(train_data, KEY_STATES, [])[perms]
+        acts        = get(train_data, KEY_ACTIONS, [])[perms]
+        log_probs   = get(train_data, KEY_LOG_PROBS, [])[perms]
+        gaes        = get(train_data, KEY_GAES, [])[perms]
+        returns     = discount_reward(get(train_data, KEY_REWARDS, []), agent.γ)[perms]
 
-        train_policy!(agent)
+        train_policy!(agent, states, acts, log_probs, gaes)
         train_value!(agent, returns)
 
         TetrisAI.Game.reset!(game)
         agent.n_games += 1
+        agent.record = max(score, agent.record)
 
-        if score > agent.record
-            agent.record = score
-        end
-
-        append_score_ticks!(benchmark, score, nb_ticks)
+        append_score_ticks!(benchmark, score, nb_ticks, reward)
         update_benchmark(benchmark, update_rate, iter, render)
     end
 
-    if isempty(run_id)
-        prefix = agent.type
-        suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
-        run_id = "$prefix-$suffix"
-    end
-
-    save_to_csv(benchmark, run_id * ".csv")
+    save_to_csv(benchmark, run_id)
 
     @info "Agent high score after $N games => $(agent.record) pts"
 end
 
-function train!(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
-    done, score = perform_rollout_step(agent, game)
+"""
+    calculate_gaes(rewards::AbstractArray{<:Float32}, values::AbstractArray{<:Float32}, γ::Float32, decay::Float32)
 
-    if done # In that case we need to train our agents
-
-        # Shuffle the training data
-        perms = randperm(length(agent.ep_states))
-
-        agent.ep_states     = agent.ep_states[perms]
-        agent.ep_acts       = agent.ep_acts[perms]
-        agent.ep_log_probs  = agent.ep_acts[perms]
-        agent.ep_reward     = discount_reward(agent.ep_reward, agent.γ)[perms]
-
-        train_policy!(agent)
-        train_value!(agent, returns)
-        reset_episode_data!(agent)
-
-        TetrisAI.Game.reset!(game)
-        agent.n_games += 1
-
-        if score > agent.record
-            agent.record = score
-        end
-    end
-
-    return done, score
-end
-
+Returns the General Advantage Estimates from the given rewards and values. (See [article of reference](https://arxiv.org/pdf/1506.02438.pdf).)
+"""
 function calculate_gaes(rewards::AbstractArray{<:Float32}, values::AbstractArray{<:Float32}, γ::Float32, decay::Float32)
     # TODO: Implement the GAES
 end
 
+"""
+    discount_reward(rewards::AbstractArray{<:Float32}, γ::Float32)
+
+Returns the discounted rewards based on the timestep each reward was received given a gamma hyperparameter.
+"""
 function discount_reward(rewards::AbstractArray{<:Float32}, γ::Float32)
     new_rewards = [rewards[end]]
     for i in (length(rewards)-1):-1:1 # Reversed
@@ -184,16 +203,31 @@ end
 function to_device!(agent::PPOAgent)
 end
 
+"""
+    policy_forward(agent::PPOAgent, state::AbstractArray{<:Integer})
+
+Compute and returns the logits from the policy network obtained from the current state and the shared layers output.
+"""
 function policy_forward(agent::PPOAgent, state::AbstractArray{<:Integer})
     shared_logits = agent.shared_layers(state)
     return agent.policy_model(shared_logits)
 end
 
+"""
+    value_forward(agent::PPOAgent, state::AbstractArray{<:Integer})
+
+Compute and returns the logits from the value network obtained from the current state and the shared layers output.
+"""
 function value_forward(agent::PPOAgent, state::AbstractArray{<:Integer})
     shared_logits = agent.shared_layers(state)
     return agent.value_model(shared_logits)
 end
 
+"""
+    forward(agent::PPOAgent, state::AbstractArray{<:Integer})
+
+Compute and returns the logits from the policy and the value networks obtained from the current state and the shared layers output.
+"""
 function forward(agent::PPOAgent, state::AbstractArray{<:Integer})
     shared_logits = agent.shared_layers(state)
     policy_logits = agent.policy_model(shared_logits)
@@ -201,10 +235,22 @@ function forward(agent::PPOAgent, state::AbstractArray{<:Integer})
     return policy_logits, value_logits
 end
 
-function train_policy!(agent::PPOAgent)
+"""
+    train_policy!(agent::PPOAgent, obs::AbstractArray, acts::AbstractArray, old_log_probs::AbstractArray, gaes::AbstractArray)
+
+Updates the agent's policy using agent.policy_max_iters iterations to modify the policy by optimizing PPO's surrogate objective
+function.
+"""
+function train_policy!(agent::PPOAgent, obs::AbstractArray, acts::AbstractArray, old_log_probs::AbstractArray, gaes::AbstractArray)
     # TODO: IMPLEMENT
 end
 
+"""
+    train_value!(agent::PPOAgent, returns::AbstractArray{Float32})
+
+Updates the agent's value function using a mean squared difference loss on the value estimations and the actual returns
+for agent.value_max_iters iterations.
+"""
 function train_value!(agent::PPOAgent, returns::AbstractArray{Float32})
     for _ in 1:agent.value_max_iters
         # TODO: Zero out the gradients
@@ -218,24 +264,11 @@ function train_value!(agent::PPOAgent, returns::AbstractArray{Float32})
     end
 end
 
+"""
+    clone_behavior!(agent::PPOAgent)
 
-function Base.show(io::IO, agent::PPOAgent)
-    println("AGENT ", agent.type)
-    println("n_games =>\t\t", agent.n_games)
-    println("record =>\t\t", agent.record)
-    println("shared_layers => \t", agent.shared_layers)
-    println("policy_layers => \t", agent.policy_layers)
-    println("value_layers => \t", agent.value_layers)
-    println("policy_max_iters => \t", agent.policy_max_iters)
-    println("value_max_iters => \t", agent.value_max_iters)
-    println("policy_lr => \t", agent.policy_lr)
-    println("value_lr => \t", agent.value_lr)
-    println("ε => \t\t", agent.ε)
-    println("γ => \t\t", agent.γ)
-    println("policy_optimizer => \t", agent.policy_optimizer)
-    println("value_optimizer => \t", agent.val_optimizer)
-end
-
+[NOT IMPLEMENTED] Will pre-train the PPO agent based on an expert dataset.
+"""
 function clone_behavior!(agent::PPOAgent)
 end
 

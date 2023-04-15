@@ -63,18 +63,21 @@ function update_benchmark(b::ScoreBenchMark, update_rate::Int64, iter, render::B
 end
 
 """
-    save_to_csv(benchmark::ScoreBenchMark, filename::String, verbose::Bool = false)
+    save_to_csv(benchmark::ScoreBenchMark, run_id::String, verbose::Bool = false)
 
 Save benchmark data as a CSV file. The name of the file is provided as an argument.
 The path doesn't support Windows' backslashes. By default, the results are saved to
 the "./results" directory.
 """
-function save_to_csv(benchmark::ScoreBenchMark, filename::String, verbose::Bool = true)
+function save_to_csv(benchmark::ScoreBenchMark, run_id::String, verbose::Bool = true)
     
-    s = splitext(filename)
-    if length(s) != 2 || (length(s) == 2 && (s[2] != ".csv"))
-        println("Warning: The filename ", filename, " you have specified isn't a CSV filename. However the CSV data was still written to that file which might not be valid for your file type.")
+    if isempty(run_id)
+        prefix = agent.type
+        suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
+        run_id = "$prefix-$suffix"
     end
+
+    filename = run_id * ".csv"
 
     # Find the right directory to save
     pre_path = ""
