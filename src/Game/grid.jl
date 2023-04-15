@@ -45,6 +45,9 @@ function downshift!(g::Grid, row::Int)
 end
 
 """
+    get_state(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+
+
 Generates a simplified grid
 """
 function get_state(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
@@ -67,6 +70,9 @@ function get_state(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
 end
 
 """
+    put_piece!(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+
+
 Puts a piece on the grid
 """
 function put_piece!(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
@@ -81,6 +87,8 @@ end
 
 
 """
+    clear_piece_cells!(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+
 Clear the space occupied by the active piece in the grid
 
 If the active piece overlap with other pieces in the grid, the other pieces will
@@ -97,6 +105,8 @@ function clear_piece_cells!(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
 end
 
 """
+    is_out_of_bounds(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+
 Check if a tetromino is out of bounds. Useful when performing moves and rotations.
 
 Some parts of the tetromino shape can be out of bounds (0 in shape matrix),
@@ -118,6 +128,8 @@ function is_out_of_bounds(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
 end
 
 """
+    is_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino; direction::Symbol=:Bottom)
+
 Check if a tetromino will collide with another tetromino on the grid
 """
 function is_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino; direction::Symbol=:Bottom)

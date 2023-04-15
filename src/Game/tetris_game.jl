@@ -25,12 +25,14 @@ end
 global gravityDict = Dict([(0, 48), (1,43), (2,38), (3,33), (4,28), (5,23), (6,18), (7,13), (8,8), (9,6), (10,5), (11,5), (12,5), (13,4), (14,4), (15,4), (16,3), (17,3), (18,3), (19,2), (20,2), (21,2), (22,2), (23,2), (24,2), (25,2), (26,2), (27,2), (28,2), (29,1)])
 
 """
+    send_input!(game::AbstractGame, input::Union{AbstractArray{<:Integer}, Symbol})
+
 Function used to send inputs to the game. 
 
 This is the only function of the tetris API that is available to the user. 
 Every attempt to change the game's state should be sent through this function.
 """
-function send_input!(game::AbstractGame, input::Union{AbstractArray{<:Integer}, Symbol})
+function send_input!( game::AbstractGame, input::Union{AbstractArray{<:Integer}, Symbol} )
     
     let VALID_INPUTS = [
         :nothing,   

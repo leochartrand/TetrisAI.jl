@@ -1,6 +1,9 @@
 using Statistics
 
 """
+    get_column_heights(g::Matrix{Int})
+
+
 Returns the vertical index of the topmost occupied cell for each column.
 """
 function get_column_heights(g::Matrix{Int})
