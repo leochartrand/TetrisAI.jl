@@ -207,6 +207,8 @@ function get_feature_grid(raw_grid::Matrix{Int})
         end
     end
 
+    # print_grids(raw_grid,feature_grid)
+
     return feature_grid
 end
 
@@ -289,8 +291,6 @@ function get_state_features(state::Vector{Int}, active_piece_row::Int, active_pi
     features = vcat(features,convert(Float64,active_piece_row))
     features = vcat(features,convert(Float64,active_piece_col))
 
-    # print_grids(raw_grid,feature_grid)
-
     return features
 end
 
@@ -307,6 +307,33 @@ function get_state_features(state::Vector{Int})
     features = get_state_features(state, active_piece_row, active_piece_col)
 
     return features
+end
+
+"""
+    get_state_feature_layers(state::Vector{Int})
+
+TBW
+"""
+function get_state_feature_layers(state::Vector{Int})
+    
+    # Feature vector
+    layers = zeros(Int, 20, 10, 5)
+
+    # Extract board state and reshape
+    raw_grid = permutedims(reshape(state[29:228], (10,20)),(2,1))
+
+    # Generate Feature grid
+    feature_grid = get_feature_grid(raw_grid)
+
+    # Turn feature grid into a stack of feature layers for CNN
+    for i in 1:20, j in 1:10
+        l = feature_grid[i,j]
+        if l > 1
+            layers[i,j,l] = 1
+        end
+    end
+
+    return layers
 end
 
 """
@@ -336,21 +363,21 @@ function computeIntermediateReward(game_grid::Matrix{Int}, last_score::Integer, 
 end
 
 """
-    shape_rewards(game::TetrisAI.Game.AbstractGame, lines::Integer)
+    shape_rewards(game::TetrisAI.Game.AbstractGame, lines::Integer, current_score::Int64, ω::Float64)
 
 TBW
 """
-function shape_rewards(game::TetrisAI.Game.AbstractGame, lines::Integer)
+function shape_rewards(game::TetrisAI.Game.AbstractGame, lines::Integer, current_score::Int64, ω::Float64)
 
     if lines != 0
-        agent.ω += 0.1
+        ω += 0.1
     end
     # Exploration to use an intermediate fitness function for early stages
     # Ref: http://cs231n.stanford.edu/reports/2016/pdfs/121_Report.pdf
     # As we score more and more lines, we change the scoring more and more to the
     # game's score instead of the intermediate rewards that are used only for the
     # early stages.
-    reward = Int(round(((1 - agent.ω) * computeIntermediateReward(game.grid.cells, agent.current_score, lines)) + (agent.ω * (lines ^ 2))))
+    reward = Int(round(((1 - ω) * computeIntermediateReward(game.grid.cells, current_score, lines)) + (ω * (lines ^ 2))))
 
-    return reward
+    return reward, ω
 end

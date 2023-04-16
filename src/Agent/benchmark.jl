@@ -10,7 +10,7 @@ Base.@kwdef mutable struct ScoreBenchMark
     labels::Array{String}   = ["Scores" "Ticks" "Rewards"]
     xlabel::String          = "Iterations"
     ylabel::String          = "Score"
-    graph_steps::Int64      = round(n / 10)
+    graph_steps::Int64      = ceil(n / 10)
     df::DataFrame           = DataFrame(Scores = Int64[], Ticks = Int64[], Rewards = Int64[])
     i::Int64                = 0
     current_max_y           = 0 # Used for ylims when plotting

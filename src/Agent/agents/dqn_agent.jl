@@ -21,9 +21,9 @@ Base.@kwdef mutable struct DQNAgent <: AbstractAgent
     n_games::Int = 0
     record::Int = 0
     current_score::Int = 0
-    feature_extraction::Bool = false
+    feature_extraction::Bool = true
     n_features::Int = 17
-    reward_shaping::Bool = false
+    reward_shaping::Bool = true
     ω::Float64 = 0              # Reward shaping constant
     η::Float64 = 1e-3           # Learning rate
     γ::Float64 = (1 - 1e-2)     # Discount factor
@@ -31,10 +31,10 @@ Base.@kwdef mutable struct DQNAgent <: AbstractAgent
     ϵ::Float64 = 1              # Exploration
     ϵ_decay::Float64 = 1
     ϵ_min::Float64 = 0.05
-    memory::AgentMemory = CircularBufferMemory()
     batch_size::Int = 128
-    policy_net = (feature_extraction ? TetrisAI.Model.dense_net(n_features, 7) : TetrisAI.Model.dense_net(228, 7)) |> device
-    target_net = (feature_extraction ? TetrisAI.Model.dense_net(n_features, 7) : TetrisAI.Model.dense_net(228, 7)) |> device
+    memory::AgentMemory = (feature_extraction ? FE_ReplayBuffer() : CNN_ReplayBuffer())
+    policy_net = (feature_extraction ? TetrisAI.Model.dense_net(n_features) : TetrisAI.Model.conv_net()) |> device
+    target_net = (feature_extraction ? TetrisAI.Model.dense_net(n_features) : TetrisAI.Model.conv_net()) |> device
     opt::Flux.Optimise.AbstractOptimiser = Flux.ADAM(η)
     loss::Function = logitcrossentropy
 end
@@ -67,11 +67,11 @@ Select ϵ-greedy action with exponential decay.
 # Examples
 ```
 julia> get_action(agent, state)
-7-element Vector{Float64}:
+7-element Vector{Int64}:
  0  0  0  0  1  0  0
 ```
 """
-function get_action(agent::DQNAgent, state::AbstractArray{<:Integer}; nb_outputs=7)
+function get_action(agent::DQNAgent, state::AbstractArray{<:Real}; nb_outputs=7)
     # Exploration modulated by epsilon with exponential decay
     exploration = agent.ϵ_min + (agent.ϵ - agent.ϵ_min) * exp(-1. * agent.n_games / agent.ϵ_decay)
     final_move = zeros(Int, nb_outputs)
@@ -95,7 +95,7 @@ end
 
 Train the agent for N episodes.
 """
-function train!(agent::DQNAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, limit_updates::Bool=true)
+function train!(agent::DQNAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, limit_updates::Bool=true, render::Bool=true, run_id::String="")
 
     benchmark = ScoreBenchMark(n=N)
 
@@ -118,6 +118,8 @@ function train!(agent::DQNAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, lim
             old_state = TetrisAI.Game.get_state(game)
             if agent.feature_extraction
                 old_state = get_state_features(old_state, game.active_piece.row, game.active_piece.col)
+            else
+                old_state = get_state_feature_layers(old_state)
             end
 
             # Get the predicted move for the state
@@ -128,10 +130,15 @@ function train!(agent::DQNAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, lim
             # Play the step
             lines, done, score = TetrisAI.Game.tick!(game)
             new_state = TetrisAI.Game.get_state(game)
+            if agent.feature_extraction
+                new_state = get_state_features(new_state, game.active_piece.row, game.active_piece.col)
+            else
+                new_state = get_state_feature_layers(new_state)
+            end
 
             # Adjust reward accoring to amount of lines cleared
             if agent.reward_shaping
-                reward = shape_rewards(game, lines)
+                reward, agent.ω = shape_rewards(game, lines, score, agent.ω)
             else
                 if lines > 0
                     reward = [1, 5, 10, 50][lines]
@@ -139,7 +146,14 @@ function train!(agent::DQNAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, lim
             end
 
             # Push transition to replay buffer
-            remember(agent, old_state, action, reward, new_state, done)
+            # remember(agent, old_state, action, reward, new_state, done)
+
+            if agent.feature_extraction
+                transistion = FE_Transition(old_state, action, reward, new_state, done)
+            else # CNN
+                transistion = CNN_Transition(old_state, action, reward, new_state, done)
+            end
+            push!(agent.memory.data, transistion)
 
             experience_replay(agent)
 
@@ -193,8 +207,8 @@ function remember(
     action::S,
     reward::T,
     next_state::S,
-    done::Bool
-) where {T<:Integer,S<:AbstractArray{<:T}}
+    done::Bool;
+) where {T<:Real,S<:AbstractArray{<:T}}
     push!(agent.memory.data, (state, action, [reward], next_state, convert.(Int, [done])))
 end
 
@@ -222,7 +236,10 @@ Perform soft target update à la DDPG.
 """
 function soft_target_update!(agent::DQNAgent) 
     for (policy, target) ∈ zip(agent.policy_net, agent.target_net)
-        target.weight .= agent.τ * policy.weight + (1 - agent.τ) * target.weight
+        if policy isa Conv || policy isa Dense
+            target.weight .= agent.τ * policy.weight + (1 - agent.τ) * target.weight
+            target.bias .= agent.τ * policy.bias + (1 - agent.τ) * target.bias
+        end
     end
 end
 
@@ -239,12 +256,12 @@ Perform an update using a batch of transistions.
 """
 function update!(
     agent::DQNAgent,
-    state::Union{A,AA},
-    action::Union{A,AA},
-    reward::Union{T,AA},
-    next_state::Union{A,AA},
-    done::Union{Bool,AA};
-) where {T<:Integer,A<:AbstractArray{<:T},AA<:AbstractArray{A}}
+    state::Union{Vector{Array{Int64,3}},Vector{Array{Float64,1}}},
+    action::Vector{Array{Int64,1}},
+    reward::Vector{Int64},
+    next_state::Union{Vector{Array{Int64,3}},Vector{Array{Float64,1}}},
+    done::Union{Vector{Bool},BitVector}
+) 
 
     # Batching the states and converting data to Float32 (done implicitly otherwise)
     state = Flux.batch(state) |> x -> convert.(Float32, x) |> device

@@ -83,16 +83,16 @@ function pretrain_agent(
 end
 
 """
-    train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
+    train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true, render::Bool=true, run_id::String="")
 
 TBW
 """
-function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
+function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true, render::Bool=true, run_id::String="")
 
     # Creating the initial game
     game = TetrisGame()
 
-    train!(agent, game, N, limit_updates)
+    train!(agent, game, N, limit_updates, render, run_id)
 end
 
 """

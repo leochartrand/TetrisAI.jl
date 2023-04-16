@@ -20,12 +20,7 @@ function Base.show(io::IO, agent::AbstractAgent)
     println("record => ", agent.record)
 end
 
-"""
-    get_action(agent::AbstractAgent, nb_outputs::Integer=7)
-
-TBW
-"""
-function get_action(agent::AbstractAgent, nb_outputs::Integer=7)
+function get_action(agent::AbstractAgent; nb_outputs::Integer=7)
     final_move = zeros(Int, nb_outputs)
     move = rand(1:nb_outputs)
     final_move[move] = 1
