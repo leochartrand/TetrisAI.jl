@@ -290,7 +290,7 @@ Updates the agent's policy using agent.policy_max_iters iterations to modify the
 function.
 """
 function train_policy!(agent::PPOAgent, states::Vector, acts::Vector, old_log_probs::Vector, gaes::Vector, returns::Vector)
-    value_loss(a, s, ret) = mean((ret - value_forward(a, s))^2) # Maybe il manque un broadcast sur la soustraction
+    value_loss(a, s, ret) = mean((ret .- value_forward(a, s))^2)
     clip(val) = clamp(val, 1-agent.ε, 1+agent.ε)
     policy_ratio = 0
     acts_one_cold = Flux.onecold.(acts)
@@ -298,10 +298,10 @@ function train_policy!(agent::PPOAgent, states::Vector, acts::Vector, old_log_pr
     states = Flux.batch(states) |> x -> convert.(Float32, x) |> device
     for _ in 1:agent.policy_max_iters
         ps = Flux.params(agent.shared_layers, agent.policy_model)
-        
-        new_policy_logits, values = forward(agent, states)
+        new_policy_logits = policy_forward(agent, states)
         new_probs = softmax(new_policy_logits)
         new_log_probs = log.(new_probs)
+
         entropy = agent.β * dot(new_probs, new_log_probs)
 
         old_log_probs_batched = [old_log_probs_batched[x, y] for (x, y) in zip(acts_one_cold,collect(1:length(acts_one_cold)))]
@@ -310,9 +310,12 @@ function train_policy!(agent::PPOAgent, states::Vector, acts::Vector, old_log_pr
         policy_ratio = exp.(new_log_probs .- old_log_probs_batched)
         full_loss = policy_ratio .* gaes
         clipped_loss = clip.(policy_ratio) .* gaes
+        loss = min(mean(full_loss), mean(clipped_loss)) + agent.ζ * value_loss(agent, states, returns) + entropy
         gs = Flux.gradient(ps) do 
-            min(mean(full_loss), mean(clipped_loss)) + agent.ζ * value_loss(agent, states, returns) + entropy # Cette ligne fait crasher le gradient
+            loss
         end
+
+        println("Gradients computed")
 
         Flux.Optimise.update!(agent.policy_optimizer, ps, gs)
 
@@ -331,12 +334,15 @@ Updates the agent's value function using a mean squared difference loss on the v
 for agent.value_max_iters iterations.
 """
 function train_value!(agent::PPOAgent, states::Vector, returns::Vector)
-    loss(a, s, ret) = mean((ret - value_forward(a, s))^2)
+    states_batched = Flux.batch(states) |> x -> convert.(Float32, x) |> device
+    returns_batched = Flux.batch(returns) |> x -> convert.(Float32, x) |> device
+
     for _ in 1:agent.value_max_iters
 
         ps = Flux.params(agent.shared_layers, agent.value_model)
+        squared_loss = mean((returns_batched .- value_forward(agent, states_batched))^2)
         gs = Flux.gradient(ps) do
-            loss(agent, states, returns)
+            squared_loss
         end
         
         Flux.Optimise.update!(agent.val_optimizer, ps, gs)
