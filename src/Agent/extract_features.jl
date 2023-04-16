@@ -189,6 +189,8 @@ function get_feature_grid(raw_grid::Matrix{Int})
         end
     end
 
+    # print_grids(raw_grid,feature_grid)
+
     return feature_grid
 end
 
@@ -265,8 +267,6 @@ function get_state_features(state::Vector{Int}, active_piece_row::Int, active_pi
     features = vcat(features,convert(Float64,active_piece_row))
     features = vcat(features,convert(Float64,active_piece_col))
 
-    # print_grids(raw_grid,feature_grid)
-
     return features
 end
 
@@ -281,6 +281,31 @@ function get_state_features(state::Vector{Int})
     features = get_state_features(state, active_piece_row, active_piece_col)
 
     return features
+end
+
+"""
+
+"""
+function get_state_feature_layers(state::Vector{Int})
+    
+    # Feature vector
+    layers = zeros(Int, 20, 10, 5)
+
+    # Extract board state and reshape
+    raw_grid = permutedims(reshape(state[29:228], (10,20)),(2,1))
+
+    # Generate Feature grid
+    feature_grid = get_feature_grid(raw_grid)
+
+    # Turn feature grid into a stack of feature layers for CNN
+    for i in 1:20, j in 1:10
+        l = feature_grid[i,j]
+        if l > 1
+            layers[i,j,l] = 1
+        end
+    end
+
+    return layers
 end
 
 """
