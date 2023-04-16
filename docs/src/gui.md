@@ -5,8 +5,6 @@ This section covers the GUI module. The module is using the GameZero package to 
 CurrentModule = TetrisAI
 ```
 
-## Methods
-
 ```@autodocs
 Modules = [TetrisAI.GUI]
 ```

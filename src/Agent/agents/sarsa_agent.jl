@@ -30,6 +30,11 @@ Base.@kwdef mutable struct SARSAAgent <: AbstractAgent
     loss::Function = logitcrossentropy
 end
 
+"""
+    get_action(agent::SARSAAgent, state::AbstractArray{<:Real}, nb_outputs::Integer=7)
+
+TBW
+"""
 function get_action(agent::SARSAAgent, state::AbstractArray{<:Real}, nb_outputs::Integer=7)
     final_move = zeros(Int, nb_outputs)
 
@@ -47,6 +52,11 @@ function get_action(agent::SARSAAgent, state::AbstractArray{<:Real}, nb_outputs:
     return final_move
 end
 
+"""
+    train!(agent::SARSAAgent, game::TetrisAI.Game.AbstractGame)
+
+TBW
+"""
 function train!(agent::SARSAAgent, game::TetrisAI.Game.AbstractGame)
 
     # Get the current step
@@ -96,6 +106,18 @@ function train!(agent::SARSAAgent, game::TetrisAI.Game.AbstractGame)
     return done, score
 end
 
+"""
+    update!(
+        agent::SARSAAgent,
+        state::Union{A,AA},
+        action::Union{A,AA},
+        reward::Union{T,AA},
+        next_state::Union{A,AA},
+        done::Union{Bool,AA};
+        α::Float32=0.9f0) where {T<:Real,A<:AbstractArray{<:T},AA<:AbstractArray{A}}
+
+Update SARSA
+"""
 function update!(
     agent::SARSAAgent,
     state::Union{A,AA},
@@ -151,6 +173,12 @@ function update!(
 end
 
 """
+    clone_behavior!(
+        agent::SARSAAgent,
+        lr::Float64 = 5e-4, 
+        batch_size::Int64 = 50, 
+        epochs::Int64 = 80)
+
 Clones behavior from expert data to policy neural net
 """
 function clone_behavior!(
@@ -164,6 +192,11 @@ function clone_behavior!(
     return agent
 end
 
+"""
+    to_device!(agent::SARSAAgent)
+
+TBW
+"""
 function to_device!(agent::SARSAAgent) 
     agent.model = agent.model |> device
 end

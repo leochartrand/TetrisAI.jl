@@ -5,8 +5,6 @@ This section covers the Model module. It is mainly used to save a model to a bin
 CurrentModule = TetrisAI
 ```
 
-## Methods
-
 ```@autodocs
 Modules = [TetrisAI.Model]
 ```

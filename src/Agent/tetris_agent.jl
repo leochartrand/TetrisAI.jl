@@ -10,11 +10,21 @@ Base.@kwdef mutable struct RandomAgent <: AbstractAgent
     model = TetrisAI.Model.random_Net(7)
 end
 
+"""
+    Base.show(io::IO, agent::AbstractAgent)
+
+TBW
+"""
 function Base.show(io::IO, agent::AbstractAgent)
     println("n_games => ", agent.n_games)
     println("record => ", agent.record)
 end
 
+"""
+    get_action(agent::AbstractAgent, nb_outputs::Integer=7)
+
+TBW
+"""
 function get_action(agent::AbstractAgent, nb_outputs::Integer=7)
     final_move = zeros(Int, nb_outputs)
     move = rand(1:nb_outputs)
@@ -23,6 +33,11 @@ function get_action(agent::AbstractAgent, nb_outputs::Integer=7)
     return final_move
 end
 
+"""
+    train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
+
+TBW
+"""
 function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
 
     # Get the current step
@@ -48,15 +63,35 @@ function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
     return done, score
 end
 
+"""
+    to_device!(agent::AbstractAgent)
+
+TBW
+"""
 function to_device!(agent::AbstractAgent) end
 
-function clone_behavior!(agent::AbstractAgent, lr::Float64 = 5e-4, batch_size::Int64 = 50, epochs::Int64 = 80) end
+"""
+    clone_behavior!(
+        agent::AbstractAgent, 
+        lr::Float64 = 5e-4, 
+        batch_size::Int64 = 50, 
+        epochs::Int64 = 80)
+
+TBW
+"""
+function clone_behavior!(
+    agent::AbstractAgent, 
+    lr::Float64 = 5e-4, 
+    batch_size::Int64 = 50, 
+    epochs::Int64 = 80) end
 
 
 # Util functions
 
 """
+    save(agent::AbstractAgent, name::AbstractString=nothing)
 
+TBW
 """
 function save(agent::AbstractAgent, name::AbstractString=nothing)
 
@@ -75,6 +110,11 @@ function save(agent::AbstractAgent, name::AbstractString=nothing)
     return
 end
 
+"""
+    load(name::AbstractString)
+
+TBW
+"""
 function load(name::AbstractString)
     
     file = string(name, ".bson")

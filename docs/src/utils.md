@@ -5,8 +5,6 @@ This section covers the Utils module. This is where is defined certain constants
 CurrentModule = TetrisAI
 ```
 
-## Methods
-
 ```@autodocs
 Modules = [TetrisAI.Utils]
 ```

@@ -19,11 +19,11 @@ end
 
 """
     clone_behavior!(
-    agent::AbstractAgent,
-    model,
-    lr::Float64 = 5e-4, 
-    batch_size::Int64 = 50, 
-    epochs::Int64 = 80)
+        agent::AbstractAgent,
+        model,
+        lr::Float64 = 5e-4, 
+        batch_size::Int64 = 50, 
+        epochs::Int64 = 80)
 
 Clones behavior from expert data to policy neural net
 """

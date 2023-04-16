@@ -20,15 +20,13 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "Agent" => Any[
-            "Agent/index.md",
-            "Agent/behavioral_cloning.md",
-            "Agent/dqn_agent.md",
-            "Agent/extract_features.md",
-            "Agent/ppo_agent.md",
-            "Agent/sac_agent.md",
-            "Agent/sarsa_agent.md",
-            "Agent/tetris_agent.md"
+            "Agent" => "agent.md",
+            "Agents" => Any[
+                "Agents/dqn_agent.md",
+                "Agents/sarsa_agent.md"
+            ]
         ],
+        #"Agent" => "agent.md",
         "Game" => "game.md",
         "GUI" => "gui.md",
         "Model" => "model.md",

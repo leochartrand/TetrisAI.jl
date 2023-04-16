@@ -32,6 +32,11 @@ Base.@kwdef mutable struct DQNAgent <: AbstractAgent
     loss::Function = logitcrossentropy
 end
 
+"""
+    get_action(agent::DQNAgent, state::AbstractArray{<:Integer}; rand_range=1:200, nb_outputs=7)
+
+TBW
+"""
 function get_action(agent::DQNAgent, state::AbstractArray{<:Integer}; rand_range=1:200, nb_outputs=7)
     agent.ϵ = 80 - agent.n_games
     final_move = zeros(Int, nb_outputs)
@@ -50,6 +55,11 @@ function get_action(agent::DQNAgent, state::AbstractArray{<:Integer}; rand_range
     return final_move
 end
 
+"""
+    train!(agent::DQNAgent, game::TetrisAI.Game.AbstractGame)
+
+TBW
+"""
 function train!(agent::DQNAgent, game::TetrisAI.Game.AbstractGame)
 
     # Get the current step
@@ -96,14 +106,25 @@ function train!(agent::DQNAgent, game::TetrisAI.Game.AbstractGame)
     return done, score
 end
 
+"""
+    train_memory(
+        agent::DQNAgent, 
+        old_state::S, 
+        move::S, 
+        reward::T, 
+        new_state::S, 
+        done::Bool) where {T<:Integer,S<:AbstractArray{<:T}}
+
+TBW
+"""
 function train_memory(
-    agent::DQNAgent,
-    old_state::S,
-    move::S,
-    reward::T,
-    new_state::S,
-    done::Bool
-) where {T<:Integer,S<:AbstractArray{<:T}}
+    agent::DQNAgent, 
+    old_state::S, 
+    move::S, 
+    reward::T, 
+    new_state::S, 
+    done::Bool) where {T<:Integer,S<:AbstractArray{<:T}}
+
     # Train the short memory
     train_short_memory(agent, old_state, move, reward, new_state, done)
     # Remember
@@ -113,6 +134,17 @@ function train_memory(
     end
 end
 
+"""
+    remember(
+        agent::DQNAgent,
+        state::S,
+        action::S,
+        reward::T,
+        next_state::S,
+        done::Bool) where {T<:Integer,S<:AbstractArray{<:T}}
+
+TBW
+"""
 function remember(
     agent::DQNAgent,
     state::S,
@@ -124,6 +156,17 @@ function remember(
     push!(agent.memory.data, (state, action, [reward], next_state, convert.(Int, [done])))
 end
 
+"""
+    train_short_memory(
+        agent::DQNAgent,
+        state::S,
+        action::S,
+        reward::T,
+        next_state::S,
+        done::Bool) where {T<:Integer,S<:AbstractArray{<:T}}
+
+TBW
+"""
 function train_short_memory(
     agent::DQNAgent,
     state::S,
@@ -135,6 +178,11 @@ function train_short_memory(
     update!(agent, state, action, reward, next_state, done)
 end
 
+"""
+    train_long_memory(agent::DQNAgent)
+
+TBW
+"""
 function train_long_memory(agent::DQNAgent)
     if length(agent.memory.data) > BATCH_SIZE
         mini_sample = sample(agent.memory.data, BATCH_SIZE)
@@ -147,6 +195,18 @@ function train_long_memory(agent::DQNAgent)
     update!(agent, states, actions, rewards, next_states, dones)
 end
 
+"""
+    update!(
+        agent::DQNAgent,
+        state::Union{A,AA},
+        action::Union{A,AA},
+        reward::Union{T,AA},
+        next_state::Union{A,AA},
+        done::Union{Bool,AA};
+        α::Float32=0.9f0) where {T<:Integer,A<:AbstractArray{<:T},AA<:AbstractArray{A}}
+
+TBW
+"""
 function update!(
     agent::DQNAgent,
     state::Union{A,AA},
@@ -202,6 +262,12 @@ function update!(
 end
 
 """
+    clone_behavior!(
+        agent::DQNAgent, 
+        lr::Float64 = 5e-4, 
+        batch_size::Int64 = 50, 
+        epochs::Int64 = 80)
+
 Clones behavior from expert data to policy neural net
 """
 function clone_behavior!(
@@ -217,6 +283,11 @@ function clone_behavior!(
     return agent
 end
 
+"""
+    to_device!(agent::DQNAgent)
+
+TBW
+"""
 function to_device!(agent::DQNAgent) 
     agent.main_net = agent.main_net |> device
     agent.target_net = agent.target_net |> device
