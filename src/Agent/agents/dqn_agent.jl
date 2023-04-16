@@ -21,9 +21,9 @@ Base.@kwdef mutable struct DQNAgent <: AbstractAgent
     n_games::Int = 0
     record::Int = 0
     current_score::Int = 0
-    feature_extraction::Bool = false
+    feature_extraction::Bool = true
     n_features::Int = 17
-    reward_shaping::Bool = false
+    reward_shaping::Bool = true
     ω::Float64 = 0              # Reward shaping constant
     η::Float64 = 1e-3           # Learning rate
     γ::Float64 = (1 - 1e-2)     # Discount factor
@@ -133,7 +133,7 @@ function train!(agent::DQNAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, lim
 
             # Adjust reward accoring to amount of lines cleared
             if agent.reward_shaping
-                reward = shape_rewards(game, lines)
+                reward, agent.ω = shape_rewards(game, lines, score, agent.ω)
             else
                 if lines > 0
                     reward = [1, 5, 10, 50][lines]
