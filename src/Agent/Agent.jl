@@ -12,7 +12,6 @@ import ..TetrisAI: MODELS_PATH
 export AbstractAgent,
     RandomAgent,
     DQNAgent,
-    SARSAAgent,
     train!,
     save,
     load,
@@ -26,11 +25,10 @@ export AbstractAgent,
 
 include("tetris_agent.jl")
 include("memory.jl")
+include("benchmark.jl")
 include("extract_features.jl")
 include("behavior_cloning.jl")
 include("agents/dqn_agent.jl")
-include("agents/sarsa_agent.jl")
 include("agents/ppo_agent.jl")
-include("agents/sac_agent.jl")
 
 end # module

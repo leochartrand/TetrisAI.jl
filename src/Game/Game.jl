@@ -1,10 +1,12 @@
 module Game
 
-import ..Tetrominoes
-import ..Tetrominoes: move_left!, move_right!, drop!, rotate_clockwise!, rotate_counter_clockwise!, reset!, get_random_piece
+import ..TetrisAI
 
-export TetrisGame, send_input!, get_state, tick!, reset!, get_preview_pieces, convert_input_to_vector
+export TetrisGame, send_input!, get_state, tick!, reset!, get_preview_pieces, convert_input_to_vector, COLORS
 
+include("moves.jl")
+include("tetrominoes.jl")
+include("functions.jl")
 include("bag.jl")
 include("grid.jl")
 include("tetris_game.jl")

@@ -312,3 +312,14 @@ Base.@kwdef mutable struct Z_PIECE{T<:Integer} <: AbstractTetromino
          7 0 0]
     ]
 end
+
+@enum COLORS begin
+    BLACK = 0
+    CYAN = 1
+    BLUE = 2
+    ORANGE = 3 
+    YELLOW = 4
+    GREEN = 5
+    PURPLE = 6
+    RED = 7
+end

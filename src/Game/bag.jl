@@ -3,7 +3,7 @@ abstract type AbstractBag end
 Base.@kwdef mutable struct Bag <: AbstractBag
     bag_size::Int = 7
     previews::Int = 3
-    pieces::Vector{<:Tetrominoes.AbstractTetromino} = Tetrominoes.AbstractTetromino[get_random_piece() for _ in 1:bag_size]
+    pieces::Vector{<:AbstractTetromino} = AbstractTetromino[get_random_piece() for _ in 1:bag_size]
 end
 
 """
