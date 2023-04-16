@@ -3,7 +3,7 @@ module Model
 using BSON, NNlib, Flux, Dates
 
 import ..TetrisAI: MODELS_PATH
-import Flux: Chain, Dense, relu
+import Flux: Chain, Dense, relu, flatten
 
 export dense_net, random_Net, save_model, load_model
 

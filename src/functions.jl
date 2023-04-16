@@ -53,12 +53,12 @@ function pretrain_agent(
     clone_behavior!(agent,lr,batch_size,epochs)
 end
 
-function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
+function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true, render::Bool=true, run_id::String="")
 
     # Creating the initial game
     game = TetrisGame()
 
-    train!(agent, game, N, limit_updates)
+    train!(agent, game, N, limit_updates, render, run_id)
 end
 
 function save_agent(agent::AbstractAgent, name::AbstractString=nothing)

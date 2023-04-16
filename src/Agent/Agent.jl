@@ -4,6 +4,7 @@ import ..TetrisAI
 
 import DataStructures: CircularBuffer
 import Flux
+import Flux: Dense, Conv
 import CUDA
 import StatsBase: sample
 import Zygote: Buffer
@@ -15,7 +16,10 @@ export AbstractAgent,
     train!,
     save,
     load,
-    CircularBufferMemory,
+    CNN_Transition,
+    FE_Transition,
+    CNN_ReplayBuffer,
+    FE_ReplayBuffer,
     get_action,
     get_state_features,
     shape_rewards,
