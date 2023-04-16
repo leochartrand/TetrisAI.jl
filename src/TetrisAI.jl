@@ -20,7 +20,7 @@ export random_Net, load_model, save_model
 
 include("Agent/Agent.jl")
 using .Agent
-export AbstractAgent, RandomAgent, to_device!, DQNAgent
+export AbstractAgent, RandomAgent, to_device!, DQNAgent, PPOAgent
 
 include("GUI/GUI.jl")
 using .GUI

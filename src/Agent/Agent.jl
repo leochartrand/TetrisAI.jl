@@ -13,6 +13,7 @@ import ..TetrisAI: MODELS_PATH
 export AbstractAgent,
     RandomAgent,
     DQNAgent,
+    PPOAgent,
     train!,
     save,
     load,

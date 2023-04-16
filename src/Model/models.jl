@@ -57,7 +57,7 @@ end
 """
 Shared layers between the Policy and the Value Networks for PPOAgent.
 """
-function ppo_shared_layers(obs_size::T, output_size::T = 512) {T<:Integer}
+function ppo_shared_layers(obs_size::T, output_size::T = 512) where {T<:Integer}
     model = Chain(
         Dense(obs_size => 256, relu),
         Dense(256 => 512, relu),
