@@ -1,5 +1,10 @@
 abstract type AbstractUI end
 
+"""
+    TetrisUI
+
+Representation of UI
+"""
 Base.@kwdef mutable struct TetrisUI <: AbstractUI
     # Sprites
     background::Actor = Actor("bg.png")

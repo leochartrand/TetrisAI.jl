@@ -5,21 +5,19 @@ CurrentModule = TetrisAI
 ```
 
 ```@docs
-get_action(agent::DQNAgent, state::AbstractArray{<:Integer}; rand_range=1:200, nb_outputs=7)
+DQNAgent
 ```
 
 ```@docs
-train!(agent::DQNAgent, game::TetrisAI.Game.AbstractGame)
+Base.show(io::IO, agent::DQNAgent)
 ```
 
 ```@docs
-Agent.train_memory(
-    agent::DQNAgent, 
-    old_state::S, 
-    move::S, 
-    reward::T, 
-    new_state::S, 
-    done::Bool) where {T<:Integer,S<:AbstractArray{<:T}}
+get_action(agent::DQNAgent, state::AbstractArray{<:Integer}; nb_outputs=7)
+```
+
+```@docs
+train!(agent::DQNAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, limit_updates::Bool=true)
 ```
 
 ```@docs
@@ -29,23 +27,15 @@ Agent.remember(
     action::S,
     reward::T,
     next_state::S,
-    done::Bool
-) where {T<:Integer,S<:AbstractArray{<:T}}
+    done::Bool) where {T<:Integer,S<:AbstractArray{<:T}}
 ```
 
 ```@docs
-Agent.train_short_memory(
-    agent::DQNAgent,
-    state::S,
-    action::S,
-    reward::T,
-    next_state::S,
-    done::Bool
-) where {T<:Integer,S<:AbstractArray{<:T}}
+Agent.experience_replay(agent::DQNAgent)
 ```
 
 ```@docs
-Agent.train_long_memory(agent::DQNAgent)
+Agent.soft_target_update!(agent::DQNAgent)
 ```
 
 ```@docs
@@ -55,9 +45,7 @@ Agent.update!(
     action::Union{A,AA},
     reward::Union{T,AA},
     next_state::Union{A,AA},
-    done::Union{Bool,AA};
-    α::Float32=0.9f0    # Step size
-) where {T<:Integer,A<:AbstractArray{<:T},AA<:AbstractArray{A}}
+    done::Union{Bool,AA}) where {T<:Integer,A<:AbstractArray{<:T},AA<:AbstractArray{A}}
 ```
 
 ```@docs

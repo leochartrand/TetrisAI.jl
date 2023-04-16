@@ -1,6 +1,6 @@
 # TetrisAI
 
-Pour accéder au répertoire AWS S3 où les données de jeux sont acheminées, créer un dossier nommé .aws sur user Home (cd %HOMEPATH pour WINDOWS, cd ~ pour LINUX/MAC) et copier les fichiers config et credentials situés dans docs/s3 du présent répertoire.
+Pour accéder au Bucket AWS S3 où les données de jeux sont acheminées, créer un dossier nommé .aws sur user Home (cd %HOMEPATH% pour WINDOWS, cd ~ pour LINUX/MAC) et copier à cet endroit les fichiers config et credentials d'AWS.
 
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://cleg1805.gitlab.io/TetrisAI.jl/dev)
 [![Build Status](https://depot.dinf.usherbrooke.ca//cleg1805/TetrisAI.jl/badges/main/pipeline.svg)](https://depot.dinf.usherbrooke.ca//cleg1805/TetrisAI.jl/pipelines)

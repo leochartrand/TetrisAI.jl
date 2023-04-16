@@ -48,6 +48,20 @@ clone_behavior!(
     epochs::Int64 = 80)
 ```
 
+## benchmark.jl
+
+```@docs
+Agent.append_score_ticks!(b::ScoreBenchMark, score::Int64, tick::Int64, reward::Int64 = 0)
+```
+
+```@docs
+Agent.update_benchmark
+```
+
+```@docs
+Agent.save_to_csv(benchmark::ScoreBenchMark, filename::String, verbose::Bool = false)
+```
+
 ## extract_features.jl
 ```@docs
 Agent.get_column_heights(g::Matrix{Int})

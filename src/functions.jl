@@ -9,6 +9,11 @@ using Dates
 import TetrisAI: Game, MODELS_PATH
 import TetrisAI.Agent: AbstractAgent
 
+"""
+    play_tetris()
+
+Play using the Tetris' interface
+"""
 function play_tetris()
     rungame("src/play.jl")
 end
@@ -51,6 +56,11 @@ function collect_data()
     wait(t2)
 end
 
+"""
+    get_data()
+
+Donwload game data from AWS S3 Bucket by calling download_data
+"""
 function get_data()
     download_data()
 end
@@ -72,6 +82,11 @@ function pretrain_agent(
     clone_behavior!(agent,lr,batch_size,epochs)
 end
 
+"""
+    train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
+
+TBW
+"""
 function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
 
     # Creating the initial game
@@ -80,6 +95,11 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true)
     train!(agent, game, N, limit_updates)
 end
 
+"""
+    save_agent(agent::AbstractAgent, name::AbstractString=nothing)
+
+TBW
+"""
 function save_agent(agent::AbstractAgent, name::AbstractString=nothing)
 
     if isfile(joinpath(MODELS_PATH, "$name.bson"))
@@ -90,6 +110,11 @@ function save_agent(agent::AbstractAgent, name::AbstractString=nothing)
     save(agent,name)
 end
 
+"""
+    load_agent(name::AbstractString)
+
+TBW
+"""
 function load_agent(name::AbstractString) 
 
     agent = load(name)

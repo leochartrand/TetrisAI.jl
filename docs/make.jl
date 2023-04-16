@@ -23,14 +23,12 @@ makedocs(;
             "Agent" => "agent.md",
             "Agents" => Any[
                 "Agents/dqn_agent.md",
-                "Agents/sarsa_agent.md"
+                "Agents/ppo_agent.md"
             ]
         ],
-        #"Agent" => "agent.md",
         "Game" => "game.md",
         "GUI" => "gui.md",
         "Model" => "model.md",
-        "Tetrominoes" => "tetrominoes.md",
         "Utils" => "utils.md"
     ],
 )

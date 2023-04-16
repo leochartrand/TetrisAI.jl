@@ -39,6 +39,11 @@ Base.@kwdef mutable struct DQNAgent <: AbstractAgent
     loss::Function = logitcrossentropy
 end
 
+"""
+    Base.show(io::IO, agent::DQNAgent)
+
+TBW
+"""
 function Base.show(io::IO, agent::DQNAgent)
     println("n_games => ", agent.n_games)
     println("record => ", agent.record)
@@ -86,7 +91,7 @@ function get_action(agent::DQNAgent, state::AbstractArray{<:Integer}; nb_outputs
 end
 
 """
-    train!(agent::DQNAgent, N::Int=100, limit_updates::Bool=true)
+    train!(agent::DQNAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, limit_updates::Bool=true)
 
 Train the agent for N episodes.
 """
@@ -172,7 +177,13 @@ function train!(agent::DQNAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, lim
 end
 
 """
-    remember(agent::DQNAgent, state::S, action::S, reward::T, next_state::S, done::Bool) where {T<:Integer,S<:AbstractArray{<:T}}
+    remember(
+        agent::DQNAgent,
+        state::S,
+        action::S,
+        reward::T,
+        next_state::S,
+        done::Bool) where {T<:Integer,S<:AbstractArray{<:T}}
 
 Add an experience tuple ``e_t = (s_t, a_t, r_t, s_{t+1})`` to the replay buffer.
 """
@@ -216,7 +227,13 @@ function soft_target_update!(agent::DQNAgent)
 end
 
 """
-    update!(agent::DQNAgent, state::Union{A,AA}, action::Union{A,AA}, reward::Union{T,AA}, next_state::Union{A,AA}, done::Union{Bool,AA};) where {T<:Integer,A<:AbstractArray{<:T},AA<:AbstractArray{A}}
+    update!(
+        agent::DQNAgent,
+        state::Union{A,AA},
+        action::Union{A,AA},
+        reward::Union{T,AA},
+        next_state::Union{A,AA},
+        done::Union{Bool,AA}) where {T<:Integer,A<:AbstractArray{<:T},AA<:AbstractArray{A}}
 
 Perform an update using a batch of transistions.
 """
@@ -274,7 +291,11 @@ function update!(
 end
 
 """
-    clone_behavior!(agent::DQNAgent, lr::Float64 = 5e-4, batch_size::Int64 = 50, epochs::Int64 = 80)
+    clone_behavior!(
+        agent::DQNAgent, 
+        lr::Float64 = 5e-4, 
+        batch_size::Int64 = 50, 
+        epochs::Int64 = 80)
 
 Clone behavior from expert data to policy neural net
 """
