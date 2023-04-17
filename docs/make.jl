@@ -1,5 +1,8 @@
-using TetrisAI
+using Pkg
+pkg"activate .."
+
 using Documenter
+using TetrisAI
 
 DocMeta.setdocmeta!(TetrisAI, :DocTestSetup, :(using TetrisAI); recursive=true)
 
@@ -16,5 +19,16 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Agent" => Any[
+            "Agent" => "agent.md",
+            "Agents" => Any[
+                "Agents/dqn_agent.md",
+                "Agents/ppo_agent.md"
+            ]
+        ],
+        "Game" => "game.md",
+        "GUI" => "gui.md",
+        "Model" => "model.md",
+        "Utils" => "utils.md"
     ],
 )

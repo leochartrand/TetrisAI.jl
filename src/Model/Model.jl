@@ -7,6 +7,11 @@ import Flux: Chain, Dense, relu, flatten
 
 export dense_net, random_Net, save_model, load_model
 
+"""
+    save_model(model::Chain, name::AbstractString=nothing)
+
+Save a binary (.bson) repesentation of the selected model.
+"""
 function save_model(model::Chain, name::AbstractString=nothing)
 
     if isnothing(name)
@@ -23,6 +28,11 @@ function save_model(model::Chain, name::AbstractString=nothing)
     return
 end
 
+"""
+    load_model(name::AbstractString)
+
+Load a model from its binary (.bson) representation.
+"""
 function load_model(name::AbstractString)
 
     file = string(name, ".bson")

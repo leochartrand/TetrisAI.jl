@@ -9,10 +9,20 @@ using Dates
 import TetrisAI: Game, MODELS_PATH
 import TetrisAI.Agent: AbstractAgent
 
+"""
+    play_tetris()
+
+Play using the Tetris' interface
+"""
 function play_tetris()
     rungame("src/play.jl")
 end
 
+"""
+    model_demo(name::AbstractString)
+
+Run a model game.
+"""
 function model_demo(name::AbstractString)
 
     model_path = joinpath(MODELS_PATH, string(name, ".bson"))
@@ -30,6 +40,14 @@ function model_demo(name::AbstractString)
     end
 end
 
+"""
+    collect_data()
+
+Play using the Tetris' interface and upload the game data to AWS S3 Bucket.
+Make use of two threads to avoid wait time at the end of a game:
+1. Thread to run the gameplay
+2. Thread that uploads the game's data to the AWS S3 Bucket.
+"""
 function collect_data()
     t2 = Threads.@spawn process_data()
     t1 = Threads.@spawn rungame("src/collect_data.jl")
@@ -38,12 +56,23 @@ function collect_data()
     wait(t2)
 end
 
+"""
+    get_data()
+
+Donwload game data from AWS S3 Bucket by calling download_data
+"""
 function get_data()
     download_data()
 end
 
 """
-Train model on generated training data
+    pretrain_agent(
+        agent::AbstractAgent,
+        lr::Float64 = 5e-4, 
+        batch_size::Int64 = 50, 
+        epochs::Int64 = 80)
+
+Train model on generated training data.
 """
 function pretrain_agent(
     agent::AbstractAgent,
@@ -53,6 +82,11 @@ function pretrain_agent(
     clone_behavior!(agent,lr,batch_size,epochs)
 end
 
+"""
+    train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true, render::Bool=true, run_id::String="")
+
+TBW
+"""
 function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true, render::Bool=true, run_id::String="")
 
     # Creating the initial game
@@ -61,6 +95,11 @@ function train_agent(agent::AbstractAgent; N::Int=100, limit_updates::Bool=true,
     train!(agent, game, N, limit_updates, render, run_id)
 end
 
+"""
+    save_agent(agent::AbstractAgent, name::AbstractString=nothing)
+
+TBW
+"""
 function save_agent(agent::AbstractAgent, name::AbstractString=nothing)
 
     if isfile(joinpath(MODELS_PATH, "$name.bson"))
@@ -71,6 +110,11 @@ function save_agent(agent::AbstractAgent, name::AbstractString=nothing)
     save(agent,name)
 end
 
+"""
+    load_agent(name::AbstractString)
+
+TBW
+"""
 function load_agent(name::AbstractString) 
 
     agent = load(name)

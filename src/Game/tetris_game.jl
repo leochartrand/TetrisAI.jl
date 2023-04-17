@@ -22,12 +22,14 @@ end
 global gravityDict = Dict([(0, 48), (1,43), (2,38), (3,33), (4,28), (5,23), (6,18), (7,13), (8,8), (9,6), (10,5), (11,5), (12,5), (13,4), (14,4), (15,4), (16,3), (17,3), (18,3), (19,2), (20,2), (21,2), (22,2), (23,2), (24,2), (25,2), (26,2), (27,2), (28,2), (29,1)])
 
 """
+    send_input!(game::AbstractGame, input::Union{AbstractArray{<:Integer}, Symbol})
+
 Function used to send inputs to the game. 
 
 This is the only function of the tetris API that is available to the user. 
 Every attempt to change the game's state should be sent through this function.
 """
-function send_input!(game::AbstractGame, input::Union{AbstractArray{<:Integer}, Symbol})
+function send_input!( game::AbstractGame, input::Union{AbstractArray{<:Integer}, Symbol} )
     
     let VALID_INPUTS = [
         :nothing,   
@@ -79,6 +81,8 @@ function convert_input_to_vector(input::Symbol)
 end
 
 """
+    tick!(game::AbstractGame)
+
 Advance the game state by one state.
 """
 function tick!(game::AbstractGame)
@@ -117,6 +121,14 @@ function tick!(game::AbstractGame)
     return lines, game.is_over, game.score
 end
 
+"""
+    get_state(game::AbstractGame)
+
+Return the current state representation, which is composed of:
+1. The piece placed on hold(if any)
+2. The next three pieces
+3. The current grid
+"""
 function get_state(game::AbstractGame)
 
     # Empty state before construction
@@ -148,6 +160,11 @@ function get_state(game::AbstractGame)
     return state
 end
 
+"""
+    reset!(game::AbstractGame)
+
+Reset game status and the diffenent variables used
+"""
 function reset!(game::AbstractGame)
     game.is_over = false
     game.level = 0
@@ -165,8 +182,9 @@ function reset!(game::AbstractGame)
 end
 
 """
-Clear full lines on the grid and adjust the score accordingly.
+    check_for_lines!(game::AbstractGame)
 
+Clear full lines on the grid and adjust the score accordingly.
 T-spins and exotic scoring not supported yet.
 """
 function check_for_lines!(game::AbstractGame)
@@ -212,6 +230,8 @@ function check_for_lines!(game::AbstractGame)
 end
 
 """
+    levelUp(game::AbstractGame)
+
 Sets gravity according to the game level (stops checking at level 30 and over).
 """
 function levelUp(game::AbstractGame)
@@ -222,8 +242,9 @@ function levelUp(game::AbstractGame)
 end
 
 """
-Rotates a piece counter-clockwise on the grid.
+    input_rotate_counter_clockwise!(game::AbstractGame)
 
+Rotates a piece counter-clockwise on the grid.
 This function should be the one called from player interaction.
 """
 function input_rotate_counter_clockwise!(game::AbstractGame)
@@ -249,8 +270,9 @@ function input_rotate_counter_clockwise!(game::AbstractGame)
 end
 
 """
-Rotates a piece clockwise on the grid.
+    input_rotate_clockwise!(game::AbstractGame)
 
+Rotates a piece clockwise on the grid.
 This function should be the one called from player interaction.
 """
 function input_rotate_clockwise!(game::AbstractGame)
@@ -277,6 +299,11 @@ function input_rotate_clockwise!(game::AbstractGame)
     return
 end
 
+"""
+    input_move_left!(game::AbstractGame)
+
+Move the piece to the left is possible.
+"""
 function input_move_left!(game::AbstractGame)
     clear_piece_cells!(game.grid, game.active_piece)
 
@@ -299,6 +326,11 @@ function input_move_left!(game::AbstractGame)
     put_piece!(game.grid, game.active_piece)
 end
 
+"""
+    input_move_right!(game::AbstractGame)
+
+Move the piece to the right if possible
+"""
 function input_move_right!(game::AbstractGame)
     clear_piece_cells!(game.grid, game.active_piece)
 
@@ -319,6 +351,11 @@ function input_move_right!(game::AbstractGame)
     put_piece!(game.grid, game.active_piece)
 end
 
+"""
+    input_hard_drop!(game::AbstractGame)
+
+Hard drop of the piece.
+"""
 function input_hard_drop!(game::AbstractGame)
 
     # Clear the space occupied by the active piece
@@ -336,6 +373,12 @@ function input_hard_drop!(game::AbstractGame)
     return
 end
 
+"""
+    input_hold_piece!(game::AbstractGame)
+
+Place the current piece on hold.
+If there already is a piece on hold, we swap for said piece.
+"""
 function input_hold_piece!(game::AbstractGame)
 
     if game.new_hold == false
@@ -363,6 +406,8 @@ function input_hold_piece!(game::AbstractGame)
 end
 
 """
+    input_nothing!(game::AbstractGame)
+
 Does nothing.
 """
 function input_nothing!(game::AbstractGame) end

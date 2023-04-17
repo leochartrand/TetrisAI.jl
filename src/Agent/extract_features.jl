@@ -1,6 +1,8 @@
 using Statistics
 
 """
+    get_column_heights(g::Matrix{Int})
+
 Returns the vertical index of the topmost occupied cell for each column.
 """
 function get_column_heights(g::Matrix{Int})
@@ -21,6 +23,8 @@ function get_column_heights(g::Matrix{Int})
 end
 
 """
+    get_bumpiness(g::Matrix{Int})
+
 Bumpiness value function. 
 Calculates the sum off differences in adjacent column heights.
 """
@@ -39,6 +43,8 @@ function get_bumpiness(g::Matrix{Int})
 end
 
 """
+    get_bumpiness(heights::AbstractArray{Int})
+
 Bumpiness value function.
 Same function as above, but taking in the array of the heights or each column.
 """
@@ -56,6 +62,8 @@ end
 
 
 """
+    is_in_visible_grid(row, col)
+
 Check if a given cell (tuple of cell indexes) is positioned in the visible grid
 """
 function is_in_visible_grid(row, col)
@@ -63,6 +71,8 @@ function is_in_visible_grid(row, col)
 end
 
 """
+    flood_cell(raw_grid::Matrix{Int}, feature_grid::Matrix{Int}, row, col, target, value)
+
 Recursive method to flood adjacent cells with a given value
 """
 function flood_cell(raw_grid::Matrix{Int}, feature_grid::Matrix{Int}, row, col, target, value)
@@ -79,6 +89,8 @@ function flood_cell(raw_grid::Matrix{Int}, feature_grid::Matrix{Int}, row, col, 
 end
 
 """
+    get_fall_height(g::Matrix{Int}, active_piece_row::Int, active_piece_col::Int)
+
 Returns the distance between the played piece and the height of the piece's colum.
 """
 function get_fall_height(g::Matrix{Int}, active_piece_row::Int, active_piece_col::Int)
@@ -94,6 +106,8 @@ function get_fall_height(g::Matrix{Int}, active_piece_row::Int, active_piece_col
 end
 
 """
+    get_n_holes(feature_grid::Matrix{Int})
+
 Returns the number of holes on the grid.
 A cell is considered a hole if there is no path from the cell to 
 the top of the grid and the cell is empty.
@@ -112,6 +126,8 @@ function get_n_holes(feature_grid::Matrix{Int})
 end
 
 """
+    get_active_piece_pos(raw_grid::Matrix{Int})
+
 Util function to obtain active position from the game grid if it's not provided.
 Useful for Imitation learning. 
 Finds the first cell from top left that is occupied by the active piece
@@ -128,6 +144,8 @@ function get_active_piece_pos(raw_grid::Matrix{Int})
 end
 
 """
+    get_feature_grid(raw_grid::Matrix{Int})
+
 Returns a grid that highlights the features of every cell
 Features:
     0 = Empty;
@@ -195,6 +213,8 @@ function get_feature_grid(raw_grid::Matrix{Int})
 end
 
 """
+    print_cell(value)
+
 Util function to print colored cell.
 Used by print_grids.
 """
@@ -215,6 +235,8 @@ function print_cell(value)
 end
 
 """
+    print_grids(raw_grid,feature_grid)
+
 Util function to print raw grid and feature grid side by side.
 For feature engineering development and debugging.
 """
@@ -236,6 +258,8 @@ function print_grids(raw_grid,feature_grid)
 end
 
 """
+    get_state_features(state::Vector{Int}, active_piece_row::Int, active_piece_col::Int)
+
 Extracts features from the game state. 
 This feature vector approximates state value and can be fed into a model.
 """
@@ -271,6 +295,8 @@ function get_state_features(state::Vector{Int}, active_piece_row::Int, active_pi
 end
 
 """
+    get_state_features(state::Vector{Int})
+
 Extracts features from the game state. 
 Placeholder function to be used when active piece position is not provided.
 """
@@ -284,7 +310,9 @@ function get_state_features(state::Vector{Int})
 end
 
 """
+    get_state_feature_layers(state::Vector{Int})
 
+TBW
 """
 function get_state_feature_layers(state::Vector{Int})
     
@@ -309,6 +337,8 @@ function get_state_feature_layers(state::Vector{Int})
 end
 
 """
+    computeIntermediateReward(game_grid::Matrix{Int}, last_score::Integer, lines::Int)
+
 Shaping the reward based on human developped heuristics to guide the agent to its first line completed.
 """
 function computeIntermediateReward(game_grid::Matrix{Int}, last_score::Integer, lines::Int)
@@ -332,6 +362,11 @@ function computeIntermediateReward(game_grid::Matrix{Int}, last_score::Integer, 
     return reward
 end
 
+"""
+    shape_rewards(game::TetrisAI.Game.AbstractGame, lines::Integer, current_score::Int64, ω::Float64)
+
+TBW
+"""
 function shape_rewards(game::TetrisAI.Game.AbstractGame, lines::Integer, current_score::Int64, ω::Float64)
 
     if lines != 0

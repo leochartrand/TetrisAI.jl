@@ -1,5 +1,10 @@
 abstract type AbstractUI end
 
+"""
+    TetrisUI
+
+Representation of UI
+"""
 Base.@kwdef mutable struct TetrisUI <: AbstractUI
     # Sprites
     background::Actor = Actor("bg.png")
@@ -27,6 +32,11 @@ Base.@kwdef mutable struct TetrisUI <: AbstractUI
     is_first_frame::Bool = true
 end
 
+"""
+    drawUI(GUI::TetrisUI, game::TetrisAI.Game.AbstractGame, Paused::Bool)
+
+Render UI for Tetris' play
+"""
 function drawUI(GUI::TetrisUI, game::TetrisAI.Game.AbstractGame, Paused::Bool)
 
     if GUI.is_first_frame

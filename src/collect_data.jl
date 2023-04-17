@@ -32,6 +32,9 @@ WIDTH = 1000
 HEIGHT = 1000
 
 """
+    on_key_down(g::Game, k)
+
+
 Checks for keyboard input.
 """
 function on_key_down(g::Game, k)
@@ -76,6 +79,11 @@ function on_key_down(g::Game, k)
     end
 end
 
+"""
+    save_training_data()
+
+Create file's suffix name and pass data for upload
+"""
 function save_training_data()
 
     suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
@@ -100,6 +108,8 @@ function save_training_data()
 end
 
 """
+    draw(g::Game)
+
 Base GameZero.jl function, called every frame. Draws everything on screen.
 """
 function draw(g::Game)
@@ -108,6 +118,8 @@ function draw(g::Game)
 end
 
 """
+    update(g::Game)
+
 Base GameZero.jl function, called every frame. Updates the game state.
 """
 function update(g::Game)

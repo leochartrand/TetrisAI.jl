@@ -24,7 +24,8 @@ export AbstractAgent,
     get_state_features,
     shape_rewards,
     clone_behavior!,
-    to_device!
+    to_device!,
+    ScoreBenchMark
 
 
 include("tetris_agent.jl")
