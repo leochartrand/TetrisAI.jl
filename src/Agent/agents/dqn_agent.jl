@@ -20,7 +20,6 @@ Base.@kwdef mutable struct DQNAgent <: AbstractAgent
     type::String = "DQN"
     n_games::Int = 0
     record::Int = 0
-    current_score::Int = 0
     feature_extraction::Bool = true
     n_features::Int = 17
     reward_shaping::Bool = true
@@ -32,7 +31,7 @@ Base.@kwdef mutable struct DQNAgent <: AbstractAgent
     ϵ_decay::Float64 = 1
     ϵ_min::Float64 = 0.05
     batch_size::Int = 128
-    memory::AgentMemory = (feature_extraction ? FE_ReplayBuffer() : CNN_ReplayBuffer())
+    memory::AgentMemory = ReplayBuffer(DQN_Transition)
     policy_net = (feature_extraction ? TetrisAI.Model.dense_net(n_features) : TetrisAI.Model.conv_net()) |> device
     target_net = (feature_extraction ? TetrisAI.Model.dense_net(n_features) : TetrisAI.Model.conv_net()) |> device
     opt::Flux.Optimise.AbstractOptimiser = Flux.ADAM(η)
@@ -146,14 +145,7 @@ function train!(agent::DQNAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, lim
             end
 
             # Push transition to replay buffer
-            # remember(agent, old_state, action, reward, new_state, done)
-
-            if agent.feature_extraction
-                transistion = FE_Transition(old_state, action, reward, new_state, done)
-            else # CNN
-                transistion = CNN_Transition(old_state, action, reward, new_state, done)
-            end
-            push!(agent.memory.data, transistion)
+            remember(agent, old_state, action, reward, new_state, done)
 
             experience_replay(agent)
 
@@ -203,13 +195,14 @@ Add an experience tuple ``e_t = (s_t, a_t, r_t, s_{t+1})`` to the replay buffer.
 """
 function remember(
     agent::DQNAgent,
-    state::S,
-    action::S,
-    reward::T,
-    next_state::S,
-    done::Bool;
-) where {T<:Real,S<:AbstractArray{<:T}}
-    push!(agent.memory.data, (state, action, [reward], next_state, convert.(Int, [done])))
+    state::Union{Array{Int64,3},Array{Float64,1}},
+    action::Array{Int64,1},
+    reward::Int64,
+    next_state::Union{Array{Int64,3},Array{Float64,1}},
+    done::Bool
+) 
+    transition = DQN_Transition(state, action, reward, next_state, done)
+    push!(agent.memory.data, transition)
 end
 
 """

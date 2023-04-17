@@ -53,3 +53,46 @@ function conv_net(output_size::T=7) where {T<:Integer}
 
     return model
 end
+
+"""
+Shared layers between the Policy and the Value Networks for PPOAgent.
+"""
+function ppo_shared_layers(obs_size::T, output_size::T = 512) {T<:Integer}
+    model = Chain(
+        Dense(obs_size => 256, relu),
+        Dense(256 => 512, relu),
+        Dense(512, output_size, relu)
+    ) |> f64
+
+    return model
+end
+
+"""
+Policy Network for PPOAgent.
+    It can take the output of the shared layers as well as the observation itself.
+    We will need to apply softmax to get a probability of the outputs.
+"""
+function policy_ppo_net(input_size::T, output_size::T, hidden_size_1::T = 256, hidden_size_2::T = 128) where {T<:Integer}
+
+    model = Chain(
+        Dense(input_size => hidden_size_1, relu),
+        Dense(hidden_size_1 => hidden_size_2, relu),
+        Dense(hidden_size_2 => output_size)
+    ) |> f64;
+
+    return model
+end
+
+"""
+Value Network for PPOAgent
+    It can take the output of the shared layers as well as the observation itself.
+"""
+function value_ppo_net(input_size::T, hidden_size_1::T = 256, hidden_size_2::T = 128) where {T<:Integer}
+    model = Chain(
+        Dense(input_size => hidden_size_1, relu),
+        Dense(hidden_size_1 => hidden_size_2, relu),
+        Dense(hidden_size_2 => 1)
+    ) |> f64;
+
+    return model;
+end

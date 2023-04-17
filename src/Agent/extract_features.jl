@@ -354,7 +354,7 @@ function computeIntermediateReward(game_grid::Matrix{Int}, last_score::Integer, 
     bumps = get_bumpiness(heights)
     holes = get_n_holes(feature_grid)
 
-    print("height_avg: ", height_avg, " bumps: ", bumps, " holes: ", holes, " lines: ", lines, "\n")
+    # print("height_avg: ", height_avg, " bumps: ", bumps, " holes: ", holes, " lines: ", lines, "\n")
 
     score = (height_cte * height_avg) + (lines_cte * lines) + (holes_cte * holes) + (bumpiness_cte * bumps)
     reward = score - last_score
