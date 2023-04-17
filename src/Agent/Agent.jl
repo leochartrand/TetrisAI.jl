@@ -4,6 +4,7 @@ import ..TetrisAI
 
 import DataStructures: CircularBuffer
 import Flux
+import Flux: Dense, Conv
 import CUDA
 import StatsBase: sample
 import Zygote: Buffer
@@ -12,11 +13,13 @@ import ..TetrisAI: MODELS_PATH
 export AbstractAgent,
     RandomAgent,
     DQNAgent,
-    SARSAAgent,
     train!,
     save,
     load,
-    CircularBufferMemory,
+    DQN_CNN_Transition,
+    DQN_FE_Transition,
+    DQN_CNN_ReplayBuffer,
+    DQN_FE_ReplayBuffer,
     get_action,
     get_state_features,
     shape_rewards,
@@ -26,11 +29,10 @@ export AbstractAgent,
 
 include("tetris_agent.jl")
 include("memory.jl")
+include("benchmark.jl")
 include("extract_features.jl")
 include("behavior_cloning.jl")
 include("agents/dqn_agent.jl")
-include("agents/sarsa_agent.jl")
 include("agents/ppo_agent.jl")
-include("agents/sac_agent.jl")
 
 end # module

@@ -1,4 +1,5 @@
 abstract type AbstractGrid end
+
 Base.@kwdef mutable struct Grid{T<:Integer} <: AbstractGrid
     rows::T = 23
     cols::T = 10
@@ -47,7 +48,7 @@ end
 """
 Generates a simplified grid
 """
-function get_state(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+function get_state(g::AbstractGrid, t::AbstractTetromino)
     # Creates a copy of the grid
     state = deepcopy(g.cells)
     # Simplifies representation of occupied cells
@@ -69,7 +70,7 @@ end
 """
 Puts a piece on the grid
 """
-function put_piece!(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+function put_piece!(g::AbstractGrid, t::AbstractTetromino)
     # Place the piece on the grid
     for i in 1:size(t, 1), j in 1:size(t, 2)
         if t[i, j] == t.color
@@ -86,7 +87,7 @@ Clear the space occupied by the active piece in the grid
 If the active piece overlap with other pieces in the grid, the other pieces will
 not be cleared.
 """
-function clear_piece_cells!(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+function clear_piece_cells!(g::AbstractGrid, t::AbstractTetromino)
     # Place the piece on the grid
     for i in 1:size(t, 1), j in 1:size(t, 2)
         if t[i, j] == t.color
@@ -102,7 +103,7 @@ Check if a tetromino is out of bounds. Useful when performing moves and rotation
 Some parts of the tetromino shape can be out of bounds (0 in shape matrix),
 we only perform OTB calculations on the actual blocks of the tetromino.
 """
-function is_out_of_bounds(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+function is_out_of_bounds(g::AbstractGrid, t::AbstractTetromino)
     # Iterate over every block of the tetromino matrix
     for i in 1:size(t, 1), j in 1:size(t, 2)
         # Calculate if a block of the tetromino is out of bounds
@@ -120,8 +121,8 @@ end
 """
 Check if a tetromino will collide with another tetromino on the grid
 """
-function is_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino; direction::Symbol=:Bottom)
-    function bottom_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+function is_collision(g::AbstractGrid, t::AbstractTetromino; direction::Symbol=:Bottom)
+    function bottom_collision(g::AbstractGrid, t::AbstractTetromino)
         # Iterate over every block of the tetromino matrix
         for i in 1:size(t, 1), j in 1:size(t, 2)
             # Calculate if a block will be on top of another tetromino
@@ -142,7 +143,7 @@ function is_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino; directi
         end
         return false
     end
-    function left_side_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+    function left_side_collision(g::AbstractGrid, t::AbstractTetromino)
         # Iterate over every block of the tetromino matrix
         for i in 1:size(t, 1), j in 1:size(t, 2)
             # Calculate if a block will be on top of another tetromino
@@ -158,7 +159,7 @@ function is_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino; directi
         end
         return false
     end
-    function right_side_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+    function right_side_collision(g::AbstractGrid, t::AbstractTetromino)
         # Iterate over every block of the tetromino matrix
         for i in 1:size(t, 1), j in 1:size(t, 2)
             # Calculate if a block will be on top of another tetromino
@@ -174,7 +175,7 @@ function is_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino; directi
         end
         return false
     end
-    function in_place_collision(g::AbstractGrid, t::Tetrominoes.AbstractTetromino)
+    function in_place_collision(g::AbstractGrid, t::AbstractTetromino)
         # Iterate over every block of the tetromino matrix
         for i in 1:size(t, 1), j in 1:size(t, 2)
             # Calculate if a block will be on top of another tetromino

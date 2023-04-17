@@ -6,4 +6,6 @@
 /.vscode/
 /saved_models/*
 /docs/s3/*
+
 results/
+run.jl
