@@ -53,6 +53,7 @@ Base.@kwdef mutable struct PPOAgent <: AbstractAgent
     β::Float32                  = 0.01
     ζ::Float32                  = 1.0
     λ::Float32                  = 0.95 # GAE parameter
+    ω::Float32                  = 0    # Reward shaping constant
     target_kl_div::Float32      = 0.01 
     policy_optimizer::Flux.Optimise.AbstractOptimiser = Flux.ADAM(policy_lr)
     val_optimizer::Flux.Optimise.AbstractOptimiser = Flux.ADAM(value_lr)
@@ -137,7 +138,7 @@ function rollout(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
 
         #-! Compute reward according to the number of lines cleared
         if agent.reward_shaping
-            reward = shape_rewards(game, lines)
+            reward = shape_rewards(game, lines, score, agent.ω)
         else
             if lines > 0
                 reward = [1, 5, 10, 50][lines]
@@ -167,7 +168,7 @@ end
 
 Trains the agent using trust region policy updates (clip) from PPO.
 """
-function train!(agent::PPOAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, limit_updates::Bool=true, run_id::String="")
+function train!(agent::PPOAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, limit_updates::Bool=true, render::Bool=true, run_id::String="")
     benchmark = ScoreBenchMark(n=N)
 
     update_rate::Int64 = 1
@@ -205,7 +206,7 @@ function train!(agent::PPOAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, lim
         update_benchmark(benchmark, update_rate, iter, render)
     end
 
-    save_to_csv(benchmark, run_id)
+    save_to_csv(benchmark, agent.type, run_id)
 
     @info "Agent high score after $N games => $(agent.record) pts"
 end
@@ -314,8 +315,6 @@ function train_policy!(agent::PPOAgent, states::Vector, acts::Vector, old_log_pr
         gs = Flux.gradient(ps) do 
             loss
         end
-
-        println("Gradients computed")
 
         Flux.Optimise.update!(agent.policy_optimizer, ps, gs)
 

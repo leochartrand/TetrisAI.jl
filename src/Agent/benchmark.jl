@@ -69,10 +69,10 @@ Save benchmark data as a CSV file. The name of the file is provided as an argume
 The path doesn't support Windows' backslashes. By default, the results are saved to
 the "./results" directory.
 """
-function save_to_csv(benchmark::ScoreBenchMark, run_id::String, verbose::Bool = true)
+function save_to_csv(benchmark::ScoreBenchMark, agent_type::String, run_id::String, verbose::Bool = true)
     
     if isempty(run_id)
-        prefix = agent.type
+        prefix = agent_type
         suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
         run_id = "$prefix-$suffix"
     end

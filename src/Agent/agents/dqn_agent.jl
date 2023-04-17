@@ -181,13 +181,7 @@ function train!(
         update_benchmark(benchmark, update_rate, iter, render)
     end
 
-    if isempty(run_id)
-        prefix = agent.type
-        suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
-        run_id = "$prefix-$suffix"
-    end
-
-    save_to_csv(benchmark, run_id * ".csv")
+    save_to_csv(benchmark, agent.type, run_id)
 
     @info "Agent high score after $N games => $(agent.record) pts"
 end
