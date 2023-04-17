@@ -11,26 +11,6 @@ Base.show(io::IO, agent::AbstractAgent)
 ```
 
 ```@docs
-get_action(agent::AbstractAgent, nb_outputs::Integer=7)
-```
-
-```@docs
-train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
-```
-
-```@docs
-to_device!(agent::AbstractAgent)
-```
-
-```@docs
-clone_behavior!(
-    agent::AbstractAgent, 
-    lr::Float64 = 5e-4, 
-    batch_size::Int64 = 50, 
-    epochs::Int64 = 80)
-```
-
-```@docs
 save(agent::AbstractAgent, name::AbstractString=nothing)
 ```
 

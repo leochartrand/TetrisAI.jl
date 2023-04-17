@@ -13,21 +13,27 @@ Base.show(io::IO, agent::DQNAgent)
 ```
 
 ```@docs
-get_action(agent::DQNAgent, state::AbstractArray{<:Integer}; nb_outputs=7)
+get_action(agent::DQNAgent, state::AbstractArray{<:Real}; nb_outputs=7)
 ```
 
 ```@docs
-train!(agent::DQNAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, limit_updates::Bool=true)
+train!(
+    agent::DQNAgent, 
+    game::TetrisAI.Game.TetrisGame, 
+    N::Int=100, 
+    limit_updates::Bool=true, 
+    render::Bool=true, 
+    run_id::String="")
 ```
 
 ```@docs
 Agent.remember(
-    agent::DQNAgent,
-    state::S,
-    action::S,
-    reward::T,
-    next_state::S,
-    done::Bool) where {T<:Integer,S<:AbstractArray{<:T}}
+        agent::DQNAgent,
+        state::Union{Array{Int64,3},Array{Float64,1}},
+        action::Array{Int64,1},
+        reward::Int64,
+        next_state::Union{Array{Int64,3},Array{Float64,1}},
+        done::Bool)
 ```
 
 ```@docs
@@ -41,11 +47,11 @@ Agent.soft_target_update!(agent::DQNAgent)
 ```@docs
 Agent.update!(
     agent::DQNAgent,
-    state::Union{A,AA},
-    action::Union{A,AA},
-    reward::Union{T,AA},
-    next_state::Union{A,AA},
-    done::Union{Bool,AA}) where {T<:Integer,A<:AbstractArray{<:T},AA<:AbstractArray{A}}
+    state::Union{Vector{Array{Int64,3}},Vector{Array{Float64,1}}},
+    action::Vector{Array{Int64,1}},
+    reward::Vector{Int64},
+    next_state::Union{Vector{Array{Int64,3}},Vector{Array{Float64,1}}},
+    done::Union{Vector{Bool},BitVector}) 
 ```
 
 ```@docs

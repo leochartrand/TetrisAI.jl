@@ -40,8 +40,6 @@ end
 
 """
     Base.show(io::IO, agent::DQNAgent)
-
-TBW
 """
 function Base.show(io::IO, agent::DQNAgent)
     println("n_games => ", agent.n_games)
@@ -59,7 +57,7 @@ function Base.show(io::IO, agent::DQNAgent)
 end
 
 """
-    get_action(agent::DQNAgent, state::AbstractArray{<:Integer}; nb_outputs=7)
+    get_action(agent::DQNAgent, state::AbstractArray{<:Real}; nb_outputs=7)
 
 Select ϵ-greedy action with exponential decay.
 
@@ -90,11 +88,23 @@ function get_action(agent::DQNAgent, state::AbstractArray{<:Real}; nb_outputs=7)
 end
 
 """
-    train!(agent::DQNAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, limit_updates::Bool=true)
+    train!(
+        agent::DQNAgent, 
+        game::TetrisAI.Game.TetrisGame, 
+        N::Int=100, 
+        limit_updates::Bool=true, 
+        render::Bool=true, 
+        run_id::String="")
 
 Train the agent for N episodes.
 """
-function train!(agent::DQNAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, limit_updates::Bool=true, render::Bool=true, run_id::String="")
+function train!(
+    agent::DQNAgent, 
+    game::TetrisAI.Game.TetrisGame, 
+    N::Int=100, 
+    limit_updates::Bool=true, 
+    render::Bool=true, 
+    run_id::String="")
 
     benchmark = ScoreBenchMark(n=N)
 
@@ -185,11 +195,11 @@ end
 """
     remember(
         agent::DQNAgent,
-        state::S,
-        action::S,
-        reward::T,
-        next_state::S,
-        done::Bool) where {T<:Integer,S<:AbstractArray{<:T}}
+        state::Union{Array{Int64,3},Array{Float64,1}},
+        action::Array{Int64,1},
+        reward::Int64,
+        next_state::Union{Array{Int64,3},Array{Float64,1}},
+        done::Bool
 
 Add an experience tuple ``e_t = (s_t, a_t, r_t, s_{t+1})`` to the replay buffer.
 """
@@ -199,8 +209,8 @@ function remember(
     action::Array{Int64,1},
     reward::Int64,
     next_state::Union{Array{Int64,3},Array{Float64,1}},
-    done::Bool
-) 
+    done::Bool)
+ 
     transition = DQN_Transition(state, action, reward, next_state, done)
     push!(agent.memory.data, transition)
 end
@@ -239,11 +249,11 @@ end
 """
     update!(
         agent::DQNAgent,
-        state::Union{A,AA},
-        action::Union{A,AA},
-        reward::Union{T,AA},
-        next_state::Union{A,AA},
-        done::Union{Bool,AA}) where {T<:Integer,A<:AbstractArray{<:T},AA<:AbstractArray{A}}
+        state::Union{Vector{Array{Int64,3}},Vector{Array{Float64,1}}},
+        action::Vector{Array{Int64,1}},
+        reward::Vector{Int64},
+        next_state::Union{Vector{Array{Int64,3}},Vector{Array{Float64,1}}},
+        done::Union{Vector{Bool},BitVector}) 
 
 Perform an update using a batch of transistions.
 """
@@ -253,8 +263,7 @@ function update!(
     action::Vector{Array{Int64,1}},
     reward::Vector{Int64},
     next_state::Union{Vector{Array{Int64,3}},Vector{Array{Float64,1}}},
-    done::Union{Vector{Bool},BitVector}
-) 
+    done::Union{Vector{Bool},BitVector}) 
 
     # Batching the states and converting data to Float32 (done implicitly otherwise)
     state = Flux.batch(state) |> x -> convert.(Float32, x) |> device

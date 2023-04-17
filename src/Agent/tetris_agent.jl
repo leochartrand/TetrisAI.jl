@@ -13,55 +13,27 @@ end
 """
     Base.show(io::IO, agent::AbstractAgent)
 
-TBW
+Print relevant Agent info.
 """
 function Base.show(io::IO, agent::AbstractAgent)
     println("n_games => ", agent.n_games)
     println("record => ", agent.record)
 end
 
-function get_action(agent::AbstractAgent; nb_outputs::Integer=7)
-    final_move = zeros(Int, nb_outputs)
-    move = rand(1:nb_outputs)
-    final_move[move] = 1
-
-    return final_move
-end
+"""
+    get_action(agent::AbstractAgent; nb_outputs::Integer=7)
+"""
+function get_action(agent::AbstractAgent; nb_outputs::Integer=7) end
 
 """
     train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
-
-TBW
 """
-function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame)
-
-    # Get the current step
-    old_state = TetrisAI.Game.get_state(game)
-
-    # Get the predicted move for the state
-    move = get_action(agent, old_state)
-    TetrisAI.send_input!(game, move)
-
-    # Play the step
-    _, done, score = TetrisAI.Game.tick!(game)
-
-    if done
-        # Reset the game
-        TetrisAI.Game.reset!(game)
-        agent.n_games += 1
-
-        if score > agent.record
-            agent.record = score
-        end
-    end
-
-    return done, score
-end
+function train!(agent::AbstractAgent, game::TetrisAI.Game.AbstractGame) end
 
 """
     to_device!(agent::AbstractAgent)
 
-TBW
+Send the Agent's models to cpu/gpu.
 """
 function to_device!(agent::AbstractAgent) end
 
@@ -72,7 +44,7 @@ function to_device!(agent::AbstractAgent) end
         batch_size::Int64 = 50, 
         epochs::Int64 = 80)
 
-TBW
+Train an agent on labeled expert data.
 """
 function clone_behavior!(
     agent::AbstractAgent, 
@@ -86,7 +58,7 @@ function clone_behavior!(
 """
     save(agent::AbstractAgent, name::AbstractString=nothing)
 
-TBW
+Save an agent to file in BSON format.
 """
 function save(agent::AbstractAgent, name::AbstractString=nothing)
 
@@ -108,7 +80,7 @@ end
 """
     load(name::AbstractString)
 
-TBW
+Load an agent from a BSON file.
 """
 function load(name::AbstractString)
     
