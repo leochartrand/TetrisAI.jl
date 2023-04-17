@@ -54,6 +54,7 @@ Base.@kwdef mutable struct PPOAgent <: AbstractAgent
     ζ::Float32                  = 1.0
     λ::Float32                  = 0.95 # GAE parameter
     ω::Float32                  = 0    # Reward shaping constant
+    horizon::Int                = 5  # T timesteps
     target_kl_div::Float32      = 0.01 
     policy_optimizer::Flux.Optimise.AbstractOptimiser = Flux.ADAM(policy_lr)
     val_optimizer::Flux.Optimise.AbstractOptimiser = Flux.ADAM(value_lr)
@@ -79,6 +80,8 @@ function Base.show(io::IO, agent::PPOAgent)
     println("β => \t\t\t", agent.β)
     println("ζ => \t\t\t", agent.ζ)
     println("λ => \t\t\t", agent.λ)
+    println("ω => \t\t\t", agent.ω)
+    println("horizon => \t\t", agent.horizon)
     println("policy_optimizer => \t", agent.policy_optimizer)
     println("value_optimizer => \t", agent.val_optimizer)
 end
@@ -106,6 +109,7 @@ It returns the training data, the episode total rewards, the score and the numbe
 function rollout(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
     ep_reward = 0
     nb_ticks = 0
+    current_horizon_size = 0
     score = 0
     done = false
     old_state = TetrisAI.Game.get_state(game)
@@ -122,7 +126,7 @@ function rollout(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
     while !done || nb_ticks > agent.max_ticks
         
         reward = 0
-
+        
         # Get the predicted move for the state
         policy_logits, val = forward(agent, old_state)
         act_dist = softmax(policy_logits)
@@ -156,11 +160,43 @@ function rollout(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
         old_state = new_state
         ep_reward += reward
         nb_ticks = nb_ticks + 1
+        current_horizon_size += 1
+
+        if current_horizon_size >= agent.horizon || done || nb_ticks > agent.max_ticks
+            train_data[KEY_GAES] = calculate_gaes(train_data[KEY_REWARDS], train_data[KEY_VALUES], train_data[KEY_DONES], agent.γ, agent.λ)
+            update!(agent, train_data)
+            empty_horizon!(train_data)
+            current_horizon_size = 0
+        end
     end
 
-    train_data[KEY_GAES] = calculate_gaes(train_data[KEY_REWARDS], train_data[KEY_VALUES], train_data[KEY_DONES], agent.γ, agent.λ)
+    return ep_reward, score, nb_ticks
+end
 
-    return train_data, ep_reward, score, nb_ticks
+function update!(agent::PPOAgent, train_data::Dict)
+    # Shuffle the training data
+    perms = randperm(length(get(train_data, KEY_STATES, [])))
+
+    # TODO: to device each list
+    states      = get(train_data, KEY_STATES, [])[perms]
+    acts        = get(train_data, KEY_ACTIONS, [])[perms]
+    log_probs   = get(train_data, KEY_LOG_PROBS, [])[perms]
+    gaes        = get(train_data, KEY_GAES, [])[perms]
+    returns     = discount_reward(get(train_data, KEY_REWARDS, []), agent.γ)[perms]
+
+    train_policy!(agent, states, acts, log_probs, gaes, returns)
+    train_value!(agent, states, returns)
+end
+
+function empty_horizon!(train_data::Dict)
+    empty!(train_data[KEY_STATES])
+    empty!(train_data[KEY_ACTIONS])
+    empty!(train_data[KEY_LOG_PROBS])
+    empty!(train_data[KEY_DONES])
+    empty!(train_data[KEY_GAES])
+    empty!(train_data[KEY_VALUES])
+    empty!(train_data[KEY_REWARDS])
+    return train_data
 end
 
 """
@@ -183,20 +219,7 @@ function train!(agent::PPOAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, lim
 
     for _ in iter
         
-        train_data, reward, score, nb_ticks = rollout(agent, game)
-
-        # Shuffle the training data
-        perms = randperm(length(get(train_data, KEY_STATES, [])))
-
-        # TODO: to device each list
-        states      = get(train_data, KEY_STATES, [])[perms]
-        acts        = get(train_data, KEY_ACTIONS, [])[perms]
-        log_probs   = get(train_data, KEY_LOG_PROBS, [])[perms]
-        gaes        = get(train_data, KEY_GAES, [])[perms]
-        returns     = discount_reward(get(train_data, KEY_REWARDS, []), agent.γ)[perms]
-
-        train_policy!(agent, states, acts, log_probs, gaes, returns)
-        train_value!(agent, states, returns)
+        reward, score, nb_ticks = rollout(agent, game)
 
         TetrisAI.Game.reset!(game)
         agent.n_games += 1
