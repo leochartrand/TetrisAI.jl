@@ -10,7 +10,7 @@ const DEFAULT_HOLD_TOLERENCE = 0.035
 const DEFAULT_OUTPUT_FILE = "dataset.json"
 const DEFAULT_SEED = 0
 
-const DATA_PATH = "data/"
+const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 const STATES_PATH = joinpath(DATA_PATH, "states")
 const LABELS_PATH = joinpath(DATA_PATH, "labels")
 const SCOREBOARD_PATH = joinpath(DATA_PATH, "scoreboard")

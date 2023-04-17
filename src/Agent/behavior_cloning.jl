@@ -5,7 +5,6 @@ using Flux.Data: DataLoader
 using Flux.Losses: logitcrossentropy
 using JSON, ProgressBars, Plots
 
-# Should be refactored
 const DATA_PATH = joinpath(TetrisAI.PROJECT_ROOT, "data")
 const STATES_PATH = joinpath(DATA_PATH, "states")
 const LABELS_PATH = joinpath(DATA_PATH, "labels")
