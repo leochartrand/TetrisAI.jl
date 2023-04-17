@@ -9,3 +9,5 @@
 
 results/
 run.jl
+*/scoreboard
+/data/*.json

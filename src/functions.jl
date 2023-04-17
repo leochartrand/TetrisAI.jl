@@ -57,15 +57,6 @@ function collect_data()
 end
 
 """
-    get_data()
-
-Donwload game data from AWS S3 Bucket by calling download_data
-"""
-function get_data()
-    download_data()
-end
-
-"""
     pretrain_agent(
         agent::AbstractAgent,
         lr::Float64 = 5e-4, 
