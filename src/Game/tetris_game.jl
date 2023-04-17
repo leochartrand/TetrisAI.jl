@@ -93,9 +93,8 @@ function tick!(game::AbstractGame)
         
         # Check for game over collision at starting row
         if game.active_piece.row == 2
-            reward = -100
             game.is_over = true
-            return reward, game.is_over, game.score
+            return 0, game.is_over, game.score
         end
 
         # Freeze the piece in place and get a new piece

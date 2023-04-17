@@ -23,6 +23,7 @@ Base.@kwdef mutable struct DQNAgent <: AbstractAgent
     feature_extraction::Bool = true
     n_features::Int = 17
     reward_shaping::Bool = true
+    reward_shaping_score::Float64 = 0.
     ω::Float64 = 0              # Reward shaping constant
     η::Float64 = 1e-3           # Learning rate
     γ::Float64 = (1 - 1e-2)     # Discount factor
@@ -122,6 +123,7 @@ function train!(
         done = false
         score = 0
         nb_ticks = 0
+        ep_reward = 0.
         while !done
             # Get the current step
             old_state = TetrisAI.Game.get_state(game)
@@ -146,8 +148,10 @@ function train!(
             end
 
             # Adjust reward accoring to amount of lines cleared
-            if agent.reward_shaping
-                reward, agent.ω = shape_rewards(game, lines, score, agent.ω)
+            if done
+                reward = -10
+            elseif agent.reward_shaping
+                reward, agent.ω, agent.reward_shaping_score = shape_rewards(game, lines, agent.reward_shaping_score, agent.ω)
             else
                 if lines > 0
                     reward = [1, 5, 10, 50][lines] |> f64
@@ -168,13 +172,14 @@ function train!(
                 agent.record = max(score, agent.record)
             end
 
+            ep_reward += reward
             nb_ticks = nb_ticks + 1
             if nb_ticks > 20000
                 break
             end
         end
 
-        append_score_ticks!(benchmark, score, nb_ticks)
+        append_score_ticks!(benchmark, score, nb_ticks, ep_reward)
         update_benchmark(benchmark, update_rate, iter, render)
     end
 
@@ -203,7 +208,7 @@ function remember(
     done::Bool)
  
     transition = DQN_Transition(state, action, reward, next_state, done)
-    push!(agent.memory.data, transition)
+    push!(agent.memory, transition)
 end
 
 """
