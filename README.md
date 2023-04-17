@@ -21,7 +21,7 @@ La collecte de données de jeux peut se faire selon deux points d'accès différ
 
     1. L'interface implémentée en Julia grâce au package GameZero.jl :
        TetrisAI.collect_data()
-    2. L'interface implémentée en HTML + Javascript disponible sur navigateur web (code sur la javascript-tetris) :
+    2. L'interface implémentée en HTML + Javascript disponible sur navigateur web (code sur la branche javascript-tetris) :
        https://tetrisaitrainer.com/
 
 #### __Documentation TetrisAI__
