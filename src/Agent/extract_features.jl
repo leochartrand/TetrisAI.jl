@@ -341,7 +341,7 @@ end
 
 Shaping the reward based on human developped heuristics to guide the agent to its first line completed.
 """
-function computeIntermediateReward(game_grid::Matrix{Int}, last_score::Integer, lines::Int)
+function computeIntermediateReward(game_grid::Matrix{Int}, last_reward_score::Float64, lines::Int)
     height_cte = -0.510066
     lines_cte = 0.760666
     holes_cte = -0.35663
@@ -356,28 +356,31 @@ function computeIntermediateReward(game_grid::Matrix{Int}, last_score::Integer, 
 
     # print("height_avg: ", height_avg, " bumps: ", bumps, " holes: ", holes, " lines: ", lines, "\n")
 
-    score = (height_cte * height_avg) + (lines_cte * lines) + (holes_cte * holes) + (bumpiness_cte * bumps)
-    reward = score - last_score
-    last_score = Int(round(score))
-    return reward
+    reward_score = (height_cte * height_avg) + (lines_cte * lines) + (holes_cte * holes) + (bumpiness_cte * bumps)
+    reward = reward_score - last_reward_score
+    last_reward_score = reward_score
+    return reward, last_reward_score
 end
 
 """
-    shape_rewards(game::TetrisAI.Game.AbstractGame, lines::Integer, current_score::Int64, ω::Float64)
+    shape_rewards(game::TetrisAI.Game.AbstractGame, lines::Integer, current_reward_score::Float64, ω::Float64)
 
 TBW
 """
-function shape_rewards(game::TetrisAI.Game.AbstractGame, lines::Integer, current_score::Int64, ω::Float64)
+function shape_rewards(game::TetrisAI.Game.AbstractGame, lines::Integer, current_reward_score::Float64, ω::Float64)
 
     if lines != 0
-        ω += 0.1
+        ω = min(ω + 0.1, 1)
     end
     # Exploration to use an intermediate fitness function for early stages
     # Ref: http://cs231n.stanford.edu/reports/2016/pdfs/121_Report.pdf
     # As we score more and more lines, we change the scoring more and more to the
     # game's score instead of the intermediate rewards that are used only for the
     # early stages.
-    reward = ((1 - ω) * computeIntermediateReward(game.grid.cells, current_score, lines)) + (ω * (lines ^ 2))
 
-    return reward, ω
+    intermediate_rewards, current_reward_score = computeIntermediateReward(game.grid.cells, current_reward_score, lines)
+
+    reward = ((1 - ω) * intermediate_rewards) + (ω * (lines ^ 2))
+
+    return reward, ω, current_reward_score
 end

@@ -11,29 +11,30 @@ Base.@kwdef mutable struct ScoreBenchMark
     xlabel::String          = "Iterations"
     ylabel::String          = "Score"
     graph_steps::Int64      = ceil(n / 10)
-    df::DataFrame           = DataFrame(Scores = Int64[], Ticks = Int64[], Rewards = Int64[])
+    df::DataFrame           = DataFrame(Scores = Int64[], Ticks = Int64[], Rewards = Float64[])
     i::Int64                = 0
     current_max_y           = 0 # Used for ylims when plotting
+    current_min_y           = 0 # Used for ylims when plotting
     xticks                  = 0:graph_steps:n # Will be updated everytime we append something to the list
     linewidth               = 2
 end
 
 """
-    append_score_ticks!(b::ScoreBenchMark, score::Int64, tick::Int64, reward::Int64 = 0)
+    append_score_ticks!(b::ScoreBenchMark, score::Int64, tick::Int64, reward::Float64 = 0)
 
 Appends the score of an episode and the number of ticks counted in that episode into the
 list used to plot the benchmarks. Also keeps track of other information for more efficient
 plotting.
 """
-function append_score_ticks!(b::ScoreBenchMark, score::Int64, tick::Int64, reward::Int64 = 0)
+function append_score_ticks!(b::ScoreBenchMark, score::Int64, tick::Int64, reward::Float64 = 0.)
     push!(b.df, [score, tick, reward])
     b.i += 1
 
     biggest = max(score, tick, reward)
-
-    if biggest > b.current_max_y
-        b.current_max_y = biggest
-    end
+    smallest = min(score, tick , reward)
+    
+    b.current_max_y = max(biggest, b.current_max_y)
+    b.current_min_y = min(smallest, b.current_min_y)
 end
 
 """
@@ -43,12 +44,11 @@ Updates the plots with the most up-to-date information.
 """
 function update_benchmark(b::ScoreBenchMark, update_rate::Int64, iter, render::Bool = true)
     if (b.i % update_rate) == 0
-
         if render
             plot(Matrix(b.df),
                 xlims=(0, b.n),
                 xticks=b.xticks,
-                ylims=(0, b.current_max_y),
+                ylims=(b.current_min_y, b.current_max_y),
                 title=string("Agent performance over ", b.n, " games"),
                 linecolor = [:orange :blue :green],
                 linewidth = b.linewidth,

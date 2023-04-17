@@ -41,6 +41,7 @@ Base.@kwdef mutable struct PPOAgent <: AbstractAgent
     ζ::Float64                  = 1.0
     λ::Float64                  = 0.95 # GAE parameter
     ω::Float64                  = 0    # Reward shaping constant
+    reward_shaping_score::Float64  = 0
     horizon::Int                = 5  # T timesteps
     target_kl_div::Float64      = 0.01 
     memory::CircularBuffer      = TrajectoryBuffer(PPO_Transition, horizon).data
@@ -68,6 +69,8 @@ function Base.show(io::IO, agent::PPOAgent)
     println("ζ => \t\t\t", agent.ζ)
     println("λ => \t\t\t", agent.λ)
     println("ω => \t\t\t", agent.ω)
+    println("reward_shaping_score => \t", agent.reward_shaping_score)
+    println("reward_shaping => \t", agent.reward_shaping)
     println("horizon => \t\t", agent.horizon)
     println("policy_optimizer => \t", agent.policy_optimizer)
     println("value_optimizer => \t", agent.val_optimizer)
@@ -115,7 +118,7 @@ function train!(agent::PPOAgent, game::TetrisAI.Game.TetrisGame, N::Int=100, lim
         agent.n_games += 1
         agent.record = max(score, agent.record)
 
-        append_score_ticks!(benchmark, score, nb_ticks, round(Int, reward))
+        append_score_ticks!(benchmark, score, nb_ticks, reward)
         update_benchmark(benchmark, update_rate, iter, render)
     end
 
@@ -166,8 +169,10 @@ function rollout(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
         end
 
         #-! Compute reward according to the number of lines cleared
-        if agent.reward_shaping
-            reward, agent.ω = shape_rewards(game, lines, score, agent.ω)
+        if done
+            reward = -10
+        elseif agent.reward_shaping
+            reward, agent.ω, agent.reward_shaping_score = shape_rewards(game, lines, agent.reward_shaping_score, agent.ω)
         else
             if lines > 0
                 reward = [1, 5, 10, 50][lines] |> f64
