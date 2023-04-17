@@ -380,7 +380,7 @@ function shape_rewards(game::TetrisAI.Game.AbstractGame, lines::Integer, current
 
     intermediate_rewards, current_reward_score = computeIntermediateReward(game.grid.cells, current_reward_score, lines)
 
-    reward = ((1 - ω) * intermediate_rewards) + (ω * (lines ^ 2))
+    reward = Float64(((1 - ω) * intermediate_rewards) + (ω * (lines ^ 2)))
 
     return reward, ω, current_reward_score
 end

@@ -149,7 +149,7 @@ function train!(
 
             # Adjust reward accoring to amount of lines cleared
             if done
-                reward = -10
+                reward = -10.
             elseif agent.reward_shaping
                 reward, agent.ω, agent.reward_shaping_score = shape_rewards(game, lines, agent.reward_shaping_score, agent.ω)
             else
