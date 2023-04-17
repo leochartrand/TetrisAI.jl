@@ -31,7 +31,7 @@ Base.@kwdef mutable struct DQNAgent <: AbstractAgent
     ϵ_decay::Float64 = 1
     ϵ_min::Float64 = 0.05
     batch_size::Int = 128
-    memory::AgentMemory = ReplayBuffer(DQN_Transition)
+    memory::CircularBuffer = ReplayBuffer(DQN_Transition).data
     policy_net = (feature_extraction ? TetrisAI.Model.dense_net(n_features) : TetrisAI.Model.conv_net()) |> device
     target_net = (feature_extraction ? TetrisAI.Model.dense_net(n_features) : TetrisAI.Model.conv_net()) |> device
     opt::Flux.Optimise.AbstractOptimiser = Flux.ADAM(η)
@@ -73,7 +73,7 @@ function get_action(agent::DQNAgent, state::AbstractArray{<:Real}; nb_outputs=7)
     exploration = agent.ϵ_min + (agent.ϵ - agent.ϵ_min) * exp(-1. * agent.n_games / agent.ϵ_decay)
     final_move = zeros(Int, nb_outputs)
 
-    if rand() < agent.ϵ
+    if rand() < exploration
         # Random move for exploration
         move = rand(1:nb_outputs)
         final_move[move] = 1
@@ -135,7 +135,7 @@ function train!(
             action = get_action(agent, old_state)
             TetrisAI.send_input!(game, action)
 
-            reward = 0
+            reward = 0.
             # Play the step
             lines, done, score = TetrisAI.Game.tick!(game)
             new_state = TetrisAI.Game.get_state(game)
@@ -150,7 +150,7 @@ function train!(
                 reward, agent.ω = shape_rewards(game, lines, score, agent.ω)
             else
                 if lines > 0
-                    reward = [1, 5, 10, 50][lines]
+                    reward = [1, 5, 10, 50][lines] |> f64
                 end
             end
 
@@ -165,10 +165,7 @@ function train!(
                 # Reset the game
                 TetrisAI.Game.reset!(game)
                 agent.n_games += 1
-
-                if score > agent.record
-                    agent.record = score
-                end
+                agent.record = max(score, agent.record)
             end
 
             nb_ticks = nb_ticks + 1
@@ -191,7 +188,7 @@ end
         agent::DQNAgent,
         state::Union{Array{Int64,3},Array{Float64,1}},
         action::Array{Int64,1},
-        reward::Int64,
+        reward::Float64,
         next_state::Union{Array{Int64,3},Array{Float64,1}},
         done::Bool
 
@@ -201,7 +198,7 @@ function remember(
     agent::DQNAgent,
     state::Union{Array{Int64,3},Array{Float64,1}},
     action::Array{Int64,1},
-    reward::Int64,
+    reward::Float64,
     next_state::Union{Array{Int64,3},Array{Float64,1}},
     done::Bool)
  
@@ -215,10 +212,10 @@ end
 Sample a minibatch from the replay buffer and to perform off-policy learning.
 """
 function experience_replay(agent::DQNAgent)
-    if length(agent.memory.data) > agent.batch_size
-        mini_sample = sample(agent.memory.data, agent.batch_size)
+    if length(agent.memory) > agent.batch_size
+        mini_sample = sample(agent.memory, agent.batch_size)
     else
-        mini_sample = agent.memory.data
+        mini_sample = agent.memory
     end
 
     states, actions, rewards, next_states, dones = map(x -> getfield.(mini_sample, x), fieldnames(eltype(mini_sample)))
@@ -245,7 +242,7 @@ end
         agent::DQNAgent,
         state::Union{Vector{Array{Int64,3}},Vector{Array{Float64,1}}},
         action::Vector{Array{Int64,1}},
-        reward::Vector{Int64},
+        reward::Vector{Float64},
         next_state::Union{Vector{Array{Int64,3}},Vector{Array{Float64,1}}},
         done::Union{Vector{Bool},BitVector}) 
 
@@ -255,7 +252,7 @@ function update!(
     agent::DQNAgent,
     state::Union{Vector{Array{Int64,3}},Vector{Array{Float64,1}}},
     action::Vector{Array{Int64,1}},
-    reward::Vector{Int64},
+    reward::Vector{Float64},
     next_state::Union{Vector{Array{Int64,3}},Vector{Array{Float64,1}}},
     done::Union{Vector{Bool},BitVector}) 
 

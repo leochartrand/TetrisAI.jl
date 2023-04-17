@@ -55,13 +55,36 @@ function conv_net(output_size::T=7) where {T<:Integer}
 end
 
 """
-Shared layers between the Policy and the Value Networks for PPOAgent.
+Shared dense layers between the Policy and the Value Networks for PPOAgent.
 """
-function ppo_shared_layers(obs_size::T, output_size::T = 512) where {T<:Integer}
+function ppo_shared_layers_dense(obs_size::T, output_size::T = 512) where {T<:Integer}
     model = Chain(
         Dense(obs_size => 256, relu),
         Dense(256 => 512, relu),
         Dense(512, output_size, relu)
+    ) |> f64
+
+    return model
+end
+
+"""
+Shared convolutional layers between the Policy and the Value Networks for PPOAgent.
+"""
+function ppo_shared_layers_conv(obs_size::T, output_size::T = 512) where {T<:Integer}
+
+    #TODO Ouput 512 = 64*( 2*4 ? )
+    model = Chain(
+        Conv((5, 5), 5 => 16, pad=(1, 1), relu),
+        BatchNorm(16),
+        Conv((5, 5), 16 => 32, pad=(0, 0), relu),
+        BatchNorm(32),
+        Conv((3, 3), 32 => 64, pad=(0, 0), relu),
+        BatchNorm(64),
+        flatten,
+        Dense((64*6*16) => 64),
+        relu,
+        Dropout(0.5),
+        Dense(64 => 7)
     ) |> f64
 
     return model

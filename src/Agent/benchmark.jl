@@ -50,7 +50,7 @@ function update_benchmark(b::ScoreBenchMark, update_rate::Int64, iter, render::B
                 xticks=b.xticks,
                 ylims=(0, b.current_max_y),
                 title=string("Agent performance over ", b.n, " games"),
-                linecolor = [:orange :blue],
+                linecolor = [:orange :blue :green],
                 linewidth = b.linewidth,
                 label=b.labels)
             xlabel!("Iterations")

@@ -377,7 +377,7 @@ function shape_rewards(game::TetrisAI.Game.AbstractGame, lines::Integer, current
     # As we score more and more lines, we change the scoring more and more to the
     # game's score instead of the intermediate rewards that are used only for the
     # early stages.
-    reward = Int(round(((1 - ω) * computeIntermediateReward(game.grid.cells, current_score, lines)) + (ω * (lines ^ 2))))
+    reward = ((1 - ω) * computeIntermediateReward(game.grid.cells, current_score, lines)) + (ω * (lines ^ 2))
 
     return reward, ω
 end
