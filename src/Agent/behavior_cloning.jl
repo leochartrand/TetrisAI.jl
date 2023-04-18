@@ -29,6 +29,7 @@ Clones behavior from expert data to policy neural net
 function clone_behavior!(
     agent::AbstractAgent,
     model,
+    get_params_func,
     lr::Float64 = 5e-4, 
     batch_size::Int64 = 50, 
     epochs::Int64 = 80)
@@ -36,39 +37,40 @@ function clone_behavior!(
     if agent.feature_extraction
         states = Array{Real,2}(undef,agent.n_features,0)
     else
-        states = Array{Real,2}(undef,228,0)
+        states = Array{Real,2}(20, 10, 5, undef) #
     end
     labels = Array{Real,2}(undef,1,0)
 
     n_states = 0
 
     # Ignore hidden files
-    states_files = [joinpath(STATES_PATH, file) for file in readdir(STATES_PATH) if startswith(file, ".") == false]
-    labels_files = [joinpath(LABELS_PATH, file) for file in readdir(LABELS_PATH) if startswith(file, ".") == false]
+    states_file = joinpath(DATA_PATH, "states-dataset.json")
+    labels_file = joinpath(DATA_PATH, "labels-dataset.json")
 
-    for file in states_files
-        states_data = JSON.parse(readline(file), dicttype=Dict{String,Vector{Int64}})
-        for state in states_data
-            state = (state |> values |> collect)[1]
-            if agent.feature_extraction
-                state = state |> get_state_features
-            end
-            n_states += 1
-            states = hcat(states, state)
+    println("Loading the expert's states...")
+
+    states_data = JSON.parse(readline(states_file), dicttype=Dict{String,Vector{Int64}})
+    for state in states_data
+        state = (state |> values |> collect)[1]
+        if agent.feature_extraction
+            state = state |> get_state_features
         end
+        n_states += 1
+        states = hcat(states, state)
     end
 
-    for file in labels_files
-        labels_data = JSON.parse(readline(file), dicttype=Dict{String,Int64})
-        for label in labels_data
-            label = label |> values |> collect
-            labels = hcat(labels, label)
-        end
+    println("Loading the expert's labels...")
+
+    labels_data = JSON.parse(readline(labels_file), dicttype=Dict{String,Int64})
+    for label in labels_data
+        label = label |> values |> collect
+        labels = hcat(labels, label)
     end
 
     # Convert labels to onehot vectors
     labels = dropdims(Flux.onehotbatch(labels,1:7);dims=2)
 
+    println("Preparing training data...")
     # Homemade split to have at least a testing metric
     train_states = states[:, begin:end - 101] |> device
     train_labels = labels[:, begin:end - 101] |> device
@@ -80,7 +82,7 @@ function clone_behavior!(
 
     to_device!(agent)
 
-    ps = Flux.params(model) # model's trainable parameters
+    ps = get_params_func(model) # model's trainable parameters
 
     loss = Flux.Losses.logitcrossentropy
 

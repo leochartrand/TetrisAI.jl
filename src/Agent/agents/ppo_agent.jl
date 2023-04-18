@@ -1,5 +1,5 @@
 using CUDA
-using Flux: gpu, cpu
+using Flux: gpu, cpu, Chain
 using Flux: onehotbatch, onecold
 using Flux.Losses: logitcrossentropy
 using StatsBase
@@ -12,6 +12,20 @@ if CUDA.functional()
 else
     device = cpu
 end
+
+Base.@kwdef mutable struct PPOPretrainModel
+    shared_layers::Chain
+    policy_layers::Chain
+end
+
+function (m::PPOPretrainModel)(x)
+    println("x:", x)
+    logits = m.shared_layers(x)
+    logits = m.policy_layers(logits)
+    return logits
+end
+
+Flux.@functor PPOPretrainModel
 
 """
     PPOAgent
@@ -379,7 +393,22 @@ end
 
 [NOT IMPLEMENTED] Will pre-train the PPO agent based on an expert dataset.
 """
-function clone_behavior!(agent::PPOAgent)
+function clone_behavior!(
+    agent::PPOAgent, 
+    lr::Float64 = 5e-4, 
+    batch_size::Int64 = 50, 
+    epochs::Int64 = 80
+)
+    pretrain::PPOPretrainModel = PPOPretrainModel(agent.shared_layers, agent.policy_model)
+    pretrain = clone_behavior!(agent, pretrain, get_params, lr, batch_size, epochs)
+
+    agent.shared_layers = deepcopy(pretrain.shared_layers)
+    agent.policy_model = deepcopy(pretrain.policy_layers)
+    return agent
+end
+
+function get_params(model::PPOPretrainModel)
+    return Flux.params(model.shared_layers, model.policy_layers)
 end
 
 """

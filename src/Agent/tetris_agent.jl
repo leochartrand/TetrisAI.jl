@@ -51,8 +51,6 @@ function clone_behavior!(
     lr::Float64 = 5e-4, 
     batch_size::Int64 = 50, 
     epochs::Int64 = 80) end
-
-
 # Util functions
 
 """
@@ -71,7 +69,7 @@ function save(agent::AbstractAgent, name::AbstractString=nothing)
     file = string(name, ".bson")
 
     path = joinpath(MODELS_PATH, file)
-    
+
     BSON.@save path agent
     
     return
