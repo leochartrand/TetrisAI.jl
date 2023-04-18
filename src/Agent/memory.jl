@@ -1,3 +1,4 @@
+using DataStructures
 abstract type AbstractTransition end
 
 Base.@kwdef struct DQN_Transition <: AbstractTransition

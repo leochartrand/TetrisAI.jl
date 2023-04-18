@@ -1,6 +1,7 @@
 #init 
 using TetrisAI
-using CUDA 
+using CUDA
+using DataStructures
 import Flux: gpu, cpu
 
 if CUDA.functional()
@@ -77,6 +78,6 @@ function update(g::Game)
     end
     if game.is_over
         # Resets the game when game is over
-        reset!(game)
+        TetrisAI.Game.reset!(game)
     end
 end

@@ -1,4 +1,5 @@
 using BSON, NNlib, Dates
+using DataStructures
 
 # AbstractAgent interface
 abstract type AbstractAgent end

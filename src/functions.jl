@@ -5,6 +5,7 @@ using Plots
 import Flux: gpu, cpu
 using JSON
 using Dates
+using DataStructures
 
 import TetrisAI: Game, MODELS_PATH
 import TetrisAI.Agent: AbstractAgent
