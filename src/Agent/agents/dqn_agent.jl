@@ -79,7 +79,7 @@ function get_action(agent::DQNAgent, state::AbstractArray{<:Real}; nb_outputs=7)
         move = rand(1:nb_outputs)
         final_move[move] = 1
     else
-        state = state |> device
+        state = process_state(agent, state) |> device
         pred = agent.policy_net(state)
         pred = pred |> cpu
         final_move[Flux.onecold(pred)] = 1
@@ -126,26 +126,18 @@ function train!(
         ep_reward = 0.
         while !done
             # Get the current step
-            old_state = TetrisAI.Game.get_state(game)
-            if agent.feature_extraction
-                old_state = get_state_features(old_state, game.active_piece.row, game.active_piece.col)
-            else
-                old_state = get_state_feature_layers(old_state)
-            end
+            raw_old_state = TetrisAI.Game.get_state(game)
 
             # Get the predicted move for the state
-            action = get_action(agent, old_state)
+            action = get_action(agent, raw_old_state)            
             TetrisAI.send_input!(game, action)
+
+            old_state = process_state(agent, raw_old_state)
 
             reward = 0.
             # Play the step
             lines, done, score = TetrisAI.Game.tick!(game)
-            new_state = TetrisAI.Game.get_state(game)
-            if agent.feature_extraction
-                new_state = get_state_features(new_state, game.active_piece.row, game.active_piece.col)
-            else
-                new_state = get_state_feature_layers(new_state)
-            end
+            new_state = process_state(agent, TetrisAI.Game.get_state(game))
 
             # Adjust reward accoring to amount of lines cleared
             if done
@@ -335,4 +327,12 @@ Send the agent's model to cpu/cuda device.
 function to_device!(agent::DQNAgent) 
     agent.policy_net = agent.policy_net |> device
     agent.target_net = agent.target_net |> device
+end
+
+function sleep(agent::DQNAgent) 
+    agent.memory = CircularBuffer{Int}(0)
+end
+
+function awake(agent::DQNAgent) 
+    agent.memory = ReplayBuffer(DQN_Transition).data
 end

@@ -50,7 +50,22 @@ function clone_behavior!(
     agent::AbstractAgent, 
     lr::Float64 = 5e-4, 
     batch_size::Int64 = 50, 
-    epochs::Int64 = 80) end
+    epochs::Int64 = 80) 
+end
+
+"""
+    process_state(agent::AbstractAgent, state::Vector{Int64})
+
+Transform the state into an array of features or layers that can be fed to a CNN.
+"""
+function process_state(agent::AbstractAgent, state::Vector{Int64})
+    if agent.feature_extraction
+        state = state |> get_state_features
+    else
+        state = state |> get_state_feature_layers
+    end
+    return state
+end
 
 
 # Util functions
@@ -67,6 +82,8 @@ function save(agent::AbstractAgent, name::AbstractString=nothing)
         suffix = Dates.format(DateTime(now()), "yyyymmddHHMMSS")
         name = "$prefix-$suffix"
     end
+
+    sleep(agent)
 
     file = string(name, ".bson")
 
@@ -93,6 +110,8 @@ function load(name::AbstractString)
     else
         print("Agent not found.\n")
     end
+
+    awake(agent)
 
     return agent
 end
