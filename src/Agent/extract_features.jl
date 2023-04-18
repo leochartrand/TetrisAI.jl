@@ -158,18 +158,10 @@ Features:
 function get_feature_grid(raw_grid::Matrix{Int})
     # Assume every block is filled
     feature_grid = ones(Int, 20, 10)
-    # Find first empty cell in top row
-    row = 1
-    col = 0
-    for i in 1:10
-        if raw_grid[1,i] == 0
-            col = i
-            break
-        end
-    end
 
-    # Flood the opaque grid from the top
-    flooded = flood_cell(raw_grid, feature_grid, row, col, 0, 0)
+    # Flood the opaque grid from the top two corners
+    flooded = flood_cell(raw_grid, feature_grid, 1, 0, 0, 0)
+    flooded = flood_cell(raw_grid, feature_grid, 1, 10, 0, 0)
 
     # Identify active piece cells and holes
     for i in 1:20, j in 1:10
@@ -258,18 +250,20 @@ function print_grids(raw_grid,feature_grid)
 end
 
 """
-    get_state_features(state::Vector{Int}, active_piece_row::Int, active_piece_col::Int)
+    get_state_features(state::Vector{Int})
 
 Extracts features from the game state. 
 This feature vector approximates state value and can be fed into a model.
 """
-function get_state_features(state::Vector{Int}, active_piece_row::Int, active_piece_col::Int)
-    
-    # Feature vector
-    features = Float64[]
+function get_state_features(state::Vector{Int})
 
     # Extract board state and reshape
     raw_grid = permutedims(reshape(state[29:228], (10,20)),(2,1))
+
+    active_piece_row, active_piece_col = get_active_piece_pos(raw_grid)
+
+    # Feature vector
+    features = Float64[]
 
     # Generate Feature grid
     feature_grid = get_feature_grid(raw_grid)
@@ -295,24 +289,9 @@ function get_state_features(state::Vector{Int}, active_piece_row::Int, active_pi
 end
 
 """
-    get_state_features(state::Vector{Int})
-
-Extracts features from the game state. 
-Placeholder function to be used when active piece position is not provided.
-"""
-function get_state_features(state::Vector{Int})
-
-    active_piece_row, active_piece_col = get_active_piece_pos(permutedims(reshape(state[29:228], (10,20)),(2,1)))
-
-    features = get_state_features(state, active_piece_row, active_piece_col)
-
-    return features
-end
-
-"""
     get_state_feature_layers(state::Vector{Int})
 
-TBW
+Transform raw state into feature maps that can be fed into a CNN.
 """
 function get_state_feature_layers(state::Vector{Int})
     
@@ -333,7 +312,7 @@ function get_state_feature_layers(state::Vector{Int})
         end
     end
 
-    return layers
+    return layers |> Float64
 end
 
 """

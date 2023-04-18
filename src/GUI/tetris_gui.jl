@@ -37,7 +37,7 @@ end
 
 Render UI for Tetris' play
 """
-function drawUI(GUI::TetrisUI, game::TetrisAI.Game.AbstractGame, Paused::Bool)
+function drawUI(GUI::TetrisUI, game::TetrisAI.Game.AbstractGame, Paused::Bool, feature_extraction::Bool)
 
     if GUI.is_first_frame
         GameZero.draw(GUI.splash)
@@ -48,19 +48,18 @@ function drawUI(GUI::TetrisUI, game::TetrisAI.Game.AbstractGame, Paused::Bool)
     GameZero.draw(GUI.background)
 
     # Draw the game board on screen
-    let grid = game.grid,
-        NB_ROWS = grid.rows,
-        NB_COLS = grid.cols,
-        NB_VISIBLE_ROWS = 20,
-        NB_HIDDEN_ROWS = NB_ROWS - NB_VISIBLE_ROWS
+    if feature_extraction
+        grid = TetrisAI.Agent.get_feature_grid(permutedims(reshape(TetrisAI.Game.get_state(game)[29:228], (10,20)),(2,1)))
+    else
+        grid = game.grid.cells[4:23,:]
+    end
 
-        for i in NB_HIDDEN_ROWS+1:NB_ROWS, j in 1:NB_COLS
-            value = grid.cells[i,j]
-            if value > 0
-                square = GUI.tetrominoesDict[value]
-                square.center = (40j + 30, 40i - 40)
-                GameZero.draw(square)
-            end
+    for i in 1:20, j in 1:10
+        value = grid[i,j]
+        if value > 0
+            square = GUI.tetrominoesDict[value]
+            square.center = (40j + 30, 40i + 80)
+            GameZero.draw(square)
         end
     end
     

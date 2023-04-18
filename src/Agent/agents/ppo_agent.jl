@@ -96,7 +96,7 @@ end
 Select an action from state using the distribution of action probabilities provided by the current policy.
 """
 function get_action(agent::PPOAgent, state::AbstractArray{<:Real}, nb_outputs::Integer=7)
-    state = state |> device
+    state = process_state(agent, state) |> device
     final_move = zeros(Int, nb_outputs)
     logits = policy_forward(agent, state)
     logits = logits |> cpu
@@ -153,12 +153,7 @@ function rollout(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
     num_steps = 0
     score = 0
     done = false
-    old_state = TetrisAI.Game.get_state(game)
-    if agent.feature_extraction
-        old_state = get_state_features(old_state, game.active_piece.row, game.active_piece.col)
-    else
-        old_state = get_state_feature_layers(old_state)
-    end
+    old_state = process_state(agent, TetrisAI.Game.get_state(game))
 
     while !done && nb_ticks < agent.max_ticks
         
@@ -175,12 +170,7 @@ function rollout(agent::PPOAgent, game::TetrisAI.Game.AbstractGame)
         #-! Play the action
         TetrisAI.send_input!(game, action_vect)          # Send the action
         lines, done, score = TetrisAI.Game.tick!(game)  # Play the step
-        new_state = TetrisAI.Game.get_state(game)
-        if agent.feature_extraction
-            new_state = get_state_features(new_state, game.active_piece.row, game.active_piece.col)
-        else
-            new_state = get_state_feature_layers(new_state)
-        end
+        new_state = process_state(agent, TetrisAI.Game.get_state(game))
 
         #-! Compute reward according to the number of lines cleared
         if done
@@ -420,5 +410,13 @@ function to_device!(agent::PPOAgent)
     agent.shared_layers = agent.shared_layers |> device
     agent.policy_model = agent.policy_model |> device
     agent.value_model = agent.value_model |> device
+end
+
+function sleep(agent::PPOAgent) 
+    agent.memory = CircularBuffer{Int}(0)
+end
+
+function awake(agent::PPOAgent) 
+    agent.memory = TrajectoryBuffer(PPO_Transition, agent.horizon).data
 end
 

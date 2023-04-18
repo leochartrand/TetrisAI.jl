@@ -23,10 +23,13 @@ export AbstractAgent,
     DQN_FE_ReplayBuffer,
     get_action,
     get_state_features,
+    get_feature_grid,
     shape_rewards,
     clone_behavior!,
     to_device!,
-    ScoreBenchMark
+    ScoreBenchMark,
+    sleep,
+    awake
 
 
 include("tetris_agent.jl")

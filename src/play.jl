@@ -5,6 +5,7 @@ global game = TetrisGame()
 global Paused = false
 global input = :nothing
 global GUI = TetrisUI()
+global feature_extraction = false
 
 WIDTH = 1000
 HEIGHT = 1000
@@ -13,7 +14,7 @@ HEIGHT = 1000
 Checks for keyboard input.
 """
 function on_key_down(g::Game, k)
-    global game, Paused, input
+    global game, Paused, input, feature_extraction
     # Pause, debug and quit
     if k == Keys.P
         if game.is_over
@@ -28,6 +29,10 @@ function on_key_down(g::Game, k)
     if k == Keys.D
         # Debug print
         println(game)
+    end
+    if k == Keys.F
+        # Debug print
+        feature_extraction = !feature_extraction
     end
     if k == Keys.Q
         # Quits the game (exits the julia environment)
@@ -55,8 +60,8 @@ end
 Base GameZero.jl function, called every frame. Draws everything on screen.
 """
 function draw(g::Game)
-    global game, Paused, GUI
-    TetrisAI.GUI.drawUI(GUI,game,Paused)
+    global GUI, game, Paused, feature_extraction
+    TetrisAI.GUI.drawUI(GUI, game, Paused, feature_extraction)
 end
 
 """
