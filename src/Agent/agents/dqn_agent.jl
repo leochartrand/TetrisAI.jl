@@ -312,7 +312,7 @@ function clone_behavior!(
     batch_size::Int64 = 50, 
     epochs::Int64 = 80)
 
-    agent.policy_net = clone_behavior!(agent, Flux.params, agent.policy_net, lr , batch_size, epochs)
+    agent.policy_net = clone_behavior!(agent, agent.policy_net, Flux.params, lr , batch_size, epochs)
 
     agent.target_net = deepcopy(agent.policy_net)
 
