@@ -158,18 +158,10 @@ Features:
 function get_feature_grid(raw_grid::Matrix{Int})
     # Assume every block is filled
     feature_grid = ones(Int, 20, 10)
-    # Find first empty cell in top row
-    row = 1
-    col = 0
-    for i in 1:10
-        if raw_grid[1,i] == 0
-            col = i
-            break
-        end
-    end
 
-    # Flood the opaque grid from the top
-    flooded = flood_cell(raw_grid, feature_grid, row, col, 0, 0)
+    # Flood the opaque grid from the top two corners
+    flooded = flood_cell(raw_grid, feature_grid, 1, 0, 0, 0)
+    flooded = flood_cell(raw_grid, feature_grid, 1, 10, 0, 0)
 
     # Identify active piece cells and holes
     for i in 1:20, j in 1:10
