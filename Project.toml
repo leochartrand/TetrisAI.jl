@@ -1,6 +1,6 @@
 name = "TetrisAI"
 uuid = "5135ef2d-63ae-4301-a332-27697f5442c2"
-authors = ["cleg1805 <cleg1805@usherbrooke.ca>", "chal2525 <chal2525@usherbrooke.ca>"]
+authors = ["cleg1805 <cleg1805@usherbrooke.ca>", "chal2525 <chal2525@usherbrooke.ca>", "thio2102 <thio2102@usherbrooke.ca>", "levj1404 <levj1404@usherbrooke.ca>"]
 version = "0.1.0"
 
 [deps]
